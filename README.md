@@ -1,12 +1,12 @@
-# {{REPO_NAME}}
+# flo
 
 ## Install
 
 ```bash
-pip install "{{REPO_NAME}} @ git+ssh://git@github.com/{{REPO_OWNER}}/{{REPO_NAME}}.git"
+pip install "flo @ git+ssh://git@github.com/fkodom/flo.git"
 
 # Install all dev dependencies (tests etc.)
-pip install "{{REPO_NAME}}[all] @ git+ssh://git@github.com/{{REPO_OWNER}}/{{REPO_NAME}}.git"
+pip install "flo[all] @ git+ssh://git@github.com/fkodom/flo.git"
 
 # Setup pre-commit hooks
 pre-commit install
