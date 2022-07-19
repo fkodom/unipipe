@@ -39,6 +39,8 @@ setup(
     long_description_content_type="text/markdown",
     install_requires=[
         "pydantic",
+        # TODO: Work on relaxing this version requirement
+        "networkx~=2.8.0",
     ],
     extras_require=extras_require,
     classifiers=[

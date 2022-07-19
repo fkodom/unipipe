@@ -39,6 +39,9 @@ class Component:
         if pipeline is not None:
             pipeline.components.append(self)
 
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self.name})"
+
 
 def component(
     func: Optional[Callable] = None,
@@ -88,7 +91,7 @@ class Pipeline(ExitStack):
 
         self.name = name.replace("_", "-")  # Cannot use _ in pipeline names
         self.components = components or []
-        self._parent: Optional[Pipeline] = None
+        self.parent: Optional[Pipeline] = None
 
     def __enter__(self):
         context = PipelineContext()
