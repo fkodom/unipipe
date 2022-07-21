@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+from inspect import signature
 from typing import Dict, List, Optional, Sequence
 
 import networkx as nx
 
-from flo.dsl import Component, Pipeline
-from flo.backend.base import Backend, RunnablePipeline
+from flo.dsl import Component, Pipeline, Input, Output
+from flo.backend.base import Backend
 
 
 class PythonBackend(Backend):
@@ -15,11 +16,28 @@ class PythonBackend(Backend):
 
     def run(
         self,
-        pipeline: RunnablePipeline,
+        pipeline: Pipeline,
         arguments: Optional[Dict] = None,
         **kwargs,
     ):
-        return super().run(pipeline, arguments, **kwargs)
+        if arguments is None:
+            arguments = {}
+
+        for _component in pipeline.components:
+            # TODO: Analyze signature for Input/Output types
+            #
+            # sign = signature(_component.func)
+            # for name, param in sign.parameters.items():
+            #     param_type = type(eval(param.annotation))
+            #     if param_type is type(Output):
+            #         arguments[_component.name]
+
+            kwargs = {
+                k: arguments[v.name] if isinstance(v, Component) else v
+                for k, v in _component.inputs.items()
+            }
+            result = _component.func(**kwargs)
+            arguments[_component.name] = result
 
 
 def topological_sort(components: Sequence[Component]) -> List[Component]:
@@ -53,5 +71,4 @@ if __name__ == "__main__":
         _ = echo(phrase=echo1)
 
     example = example_pipeline()
-    built = PythonBackend().build(example)
-    print([(c, list(c.inputs.items())) for c in built.components])
+    PythonBackend().build_and_run(example)

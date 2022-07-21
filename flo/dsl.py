@@ -3,8 +3,25 @@ from __future__ import annotations
 from contextlib import ExitStack
 from functools import partial
 from types import TracebackType
-from typing import Dict, Optional, Callable, List
+from typing import Annotated, Dict, Optional, Callable, List, TypeVar
 from uuid import uuid1
+
+from kfp.v2.dsl import Artifact
+
+
+class InputAnnotation:
+    """Marker type for input artifacts."""
+
+
+class OutputAnnotation:
+    """Marker type for output artifacts."""
+
+
+T = TypeVar("T")
+# Input represents an Input artifact of type T.
+Input = Annotated[T, InputAnnotation]
+# Output represents an Output artifact of type T.
+Output = Annotated[T, OutputAnnotation]
 
 
 class Component:
