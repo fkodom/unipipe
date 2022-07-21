@@ -1,27 +1,50 @@
 from __future__ import annotations
 
 from contextlib import ExitStack
+from enum import Enum
 from functools import partial
 from types import TracebackType
-from typing import Annotated, Dict, Optional, Callable, List, TypeVar
+from typing import Dict, Optional, Callable, List
 from uuid import uuid1
 
-from kfp.v2.dsl import Artifact
+from kfp.v2.dsl import Artifact, Input, Output
+from pydantic import BaseModel, Field
 
 
-class InputAnnotation:
-    """Marker type for input artifacts."""
+__all__ = [
+    "Accelerator",
+    "Artifact",
+    "Component",
+    "HardwareSpec",
+    "Input",
+    "Output",
+    "Pipeline",
+    "component",
+    "pipeline",
+]
 
 
-class OutputAnnotation:
-    """Marker type for output artifacts."""
+class Accelerator(str, Enum):
+    """
+    Enum of supported Accelerator ids.
+    """
+
+    T4 = "nvidia-tesla-t4"
+    V100 = "nvidia-tesla-v100"
+    P4 = "nvidia-tesla-p4"
+    P100 = "nvidia-tesla-p100"
+    K80 = "nvidia-tesla-k80"
 
 
-T = TypeVar("T")
-# Input represents an Input artifact of type T.
-Input = Annotated[T, InputAnnotation]
-# Output represents an Output artifact of type T.
-Output = Annotated[T, OutputAnnotation]
+class HardwareSpec(BaseModel):
+    """
+    Hardware resources for a pipeline component.
+    """
+
+    cpu_count: Optional[str] = Field(None, alias="cpuCount")
+    memory: Optional[str] = None
+    accelerator_count: Optional[str] = Field(None, alias="acceleratorCount")
+    accelerator_type: Optional[Accelerator] = Field(None, alias="acceleratorType")
 
 
 class Component:
@@ -33,6 +56,7 @@ class Component:
         # Not used by the local executor
         base_image: Optional[str] = None,
         packages_to_install: Optional[List[str]] = None,
+        hardware_spec: Optional[HardwareSpec] = None,
         **kwargs,
     ) -> None:
         """
@@ -50,6 +74,7 @@ class Component:
         self.inputs = inputs or {}
         self.base_image = base_image
         self.packages_to_install = packages_to_install
+        self.hardware_spec = hardware_spec
         self.kwargs = kwargs
 
         pipeline = PipelineContext().current

@@ -1,24 +1,20 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Dict, Optional
+from typing import Any, Dict, Optional
 
 from flo.dsl import Pipeline
 
 
-class RunnablePipeline:
-    pass
-
-
 class Backend:
     @abstractmethod
-    def build(self, pipeline: Pipeline) -> RunnablePipeline:
+    def build(self, pipeline: Pipeline):
         pass
 
     @abstractmethod
     def run(
         self,
-        pipeline: RunnablePipeline,
+        pipeline: Any,
         arguments: Optional[Dict] = None,
         **kwargs,
     ):

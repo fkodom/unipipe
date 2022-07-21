@@ -1,57 +1,39 @@
 from __future__ import annotations
 
-from inspect import signature
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, Optional
 
-import networkx as nx
-
-from flo.dsl import Component, Pipeline, Input, Output
-from flo.backend.base import Backend
+from flo.dsl import Component, Pipeline
+from flo.executor.base import Executor
+from flo.utils.sort import topological_sort
 
 
-class PythonBackend(Backend):
-    def build(self, pipeline: Pipeline) -> Pipeline:
-        pipeline.components = topological_sort(pipeline.components)
-        return pipeline
-
+class PythonExecutor(Executor):
     def run(
         self,
         pipeline: Pipeline,
         arguments: Optional[Dict] = None,
         **kwargs,
     ):
+        pipeline.components = topological_sort(pipeline.components)
         if arguments is None:
             arguments = {}
 
         for _component in pipeline.components:
             # TODO: Analyze signature for Input/Output types
             #
+            # from inspect import signature
             # sign = signature(_component.func)
             # for name, param in sign.parameters.items():
             #     param_type = type(eval(param.annotation))
             #     if param_type is type(Output):
             #         arguments[_component.name]
 
-            kwargs = {
+            _kwargs = {
                 k: arguments[v.name] if isinstance(v, Component) else v
                 for k, v in _component.inputs.items()
             }
-            result = _component.func(**kwargs)
+            result = _component.func(**_kwargs)
             arguments[_component.name] = result
-
-
-def topological_sort(components: Sequence[Component]) -> List[Component]:
-    digraph = nx.DiGraph(
-        [
-            (_input, component.name)
-            for component in components
-            for _input in component.inputs.values()
-        ]
-    )
-    ordered = nx.topological_sort(digraph)
-    components_by_name = {component.name: component for component in components}
-    result = [components_by_name.get(name, None) for name in ordered]
-    return [x for x in result if x is not None]
 
 
 if __name__ == "__main__":
@@ -71,4 +53,4 @@ if __name__ == "__main__":
         _ = echo(phrase=echo1)
 
     example = example_pipeline()
-    PythonBackend().build_and_run(example)
+    PythonExecutor().run(example)
