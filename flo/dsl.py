@@ -8,11 +8,11 @@ from typing import Dict, Optional, Callable, List
 from uuid import uuid1
 
 from kfp.v2.dsl import Artifact, Input, Output
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, parse_obj_as
 
 
 __all__ = [
-    "Accelerator",
+    "AcceleratorType",
     "Artifact",
     "Component",
     "Hardware",
@@ -24,11 +24,7 @@ __all__ = [
 ]
 
 
-class Accelerator(str, Enum):
-    """
-    Enum of supported Accelerator ids.
-    """
-
+class AcceleratorType(str, Enum):
     T4 = "nvidia-tesla-t4"
     V100 = "nvidia-tesla-v100"
     P4 = "nvidia-tesla-p4"
@@ -36,15 +32,25 @@ class Accelerator(str, Enum):
     K80 = "nvidia-tesla-k80"
 
 
+class Accelerator(BaseModel):
+    count: Optional[str] = None
+    type: Optional[AcceleratorType] = None
+
+    class Config:
+        allow_population_by_field_name: bool = True
+
+
 class Hardware(BaseModel):
     """
     Hardware resources for a pipeline component.
     """
 
-    cpu_count: Optional[str] = Field(None, alias="cpuCount")
+    cpus: Optional[str] = None
     memory: Optional[str] = None
-    accelerator_count: Optional[str] = Field(None, alias="acceleratorCount")
-    accelerator_type: Optional[Accelerator] = Field(None, alias="acceleratorType")
+    accelerator: Optional[Accelerator] = None
+
+    class Config:
+        allow_population_by_field_name: bool = True
 
 
 class Component:
@@ -74,7 +80,7 @@ class Component:
         self.inputs = inputs or {}
         self.base_image = base_image
         self.packages_to_install = packages_to_install
-        self.hardware = hardware or Hardware()
+        self.hardware = parse_obj_as(Hardware, hardware) if hardware else Hardware()
         self.kwargs = kwargs
 
         pipeline = PipelineContext().current

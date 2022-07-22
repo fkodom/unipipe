@@ -15,23 +15,26 @@ def build_kubeflow_component(component: Component):
         packages_to_install=component.packages_to_install,
     )
     comp.name = component.name
-    if component.hardware.cpu_count:
-        comp.container.set_cpu_limit(component.hardware.cpu_count)
-
-    if component.hardware.memory:
-        comp.container.set_memory_limit(component.hardware.memory)
-
-    if component.hardware.accelerator_type:
-        if not component.hardware.accelerator_count:
-            comp.set_accelerator_count(1)
-
-        comp.container.set_gpu_limit(component.hardware.accelerator_count)
-        comp.add_node_selector_constraint(
-            "cloud.google.com/gke-accelerator",
-            component.hardware.accelerator_type.value,
-        )
-
     return comp
+
+
+def set_hardware_attributes(container_op: Any, component: Component):
+    hardware = component.hardware
+    if hardware.cpus:
+        container_op.set_cpu_limit(hardware.cpus)
+    if hardware.memory:
+        container_op.set_memory_limit(hardware.memory)
+    if hardware.accelerator:
+        accelerator = hardware.accelerator
+        if accelerator.count:
+            container_op.set_gpu_limit(accelerator.count)
+        if accelerator.type:
+            container_op.add_node_selector_constraint(
+                "cloud.google.com/gke-accelerator",
+                accelerator.type.value,
+            )
+
+    return container_op
 
 
 class KubeflowPipelinesBackend:
@@ -52,6 +55,7 @@ class KubeflowPipelinesBackend:
                     for k, v in _component.inputs.items()
                 }
                 container_op = kfp_component(**kwargs)
+                set_hardware_attributes(container_op, _component)
                 outputs[_component.name] = container_op.output
 
         return kfp_pipeline

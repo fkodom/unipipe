@@ -101,18 +101,17 @@ class VertexExecutor(Executor):
 
 
 if __name__ == "__main__":
-    from flo.dsl import component, pipeline, Hardware
+    from flo.dsl import component, pipeline, Accelerator, AcceleratorType, Hardware
 
     # TODO: Turn these examples into unit tests!
 
-    # Example using function decorators
     @component(
-        hardware_spec=Hardware(
-            cpu_count=1,
-            accelerator_count=0,
-        )
+        name="echo-1",
+        hardware=Hardware(
+            cpus=4, accelerator=Accelerator(type=AcceleratorType.T4, count=1)
+        ),
     )
-    def echo(phrase: str):
+    def echo(phrase: str) -> str:
         print(phrase)
         return phrase
 
