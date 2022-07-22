@@ -15,7 +15,7 @@ __all__ = [
     "Accelerator",
     "Artifact",
     "Component",
-    "HardwareSpec",
+    "Hardware",
     "Input",
     "Output",
     "Pipeline",
@@ -36,7 +36,7 @@ class Accelerator(str, Enum):
     K80 = "nvidia-tesla-k80"
 
 
-class HardwareSpec(BaseModel):
+class Hardware(BaseModel):
     """
     Hardware resources for a pipeline component.
     """
@@ -56,7 +56,7 @@ class Component:
         # Not used by the local executor
         base_image: Optional[str] = None,
         packages_to_install: Optional[List[str]] = None,
-        hardware_spec: Optional[HardwareSpec] = None,
+        hardware: Optional[Hardware] = None,
         **kwargs,
     ) -> None:
         """
@@ -74,7 +74,7 @@ class Component:
         self.inputs = inputs or {}
         self.base_image = base_image
         self.packages_to_install = packages_to_install
-        self.hardware_spec = hardware_spec
+        self.hardware = hardware or Hardware()
         self.kwargs = kwargs
 
         pipeline = PipelineContext().current
@@ -90,6 +90,7 @@ def component(
     name: Optional[str] = None,
     base_image: Optional[str] = None,
     packages_to_install: Optional[List[str]] = None,
+    hardware: Optional[Hardware] = None,
     **kwargs,
 ):
     new_component = partial(
@@ -97,6 +98,7 @@ def component(
         name=name,
         base_image=base_image,
         packages_to_install=packages_to_install,
+        hardware=hardware,
         **kwargs,
     )
 

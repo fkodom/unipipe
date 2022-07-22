@@ -5,12 +5,12 @@ from tempfile import TemporaryDirectory
 from typing import Any, Dict, Optional
 
 from kfp.v2.compiler import Compiler
-from kfp.v2.google.client import AIPlatformClient
+from google.cloud.aiplatform import PipelineJob
+from google.auth.credentials import Credentials
 
 from flo.backend.kfp import KubeflowPipelinesBackend
 from flo.dsl import Pipeline
 from flo.executor.base import Executor
-
 
 # class PipelineState(str, Enum):
 #     """
@@ -77,23 +77,52 @@ class VertexExecutor(Executor):
         arguments: Optional[Dict] = None,
         pipeline_root: Optional[str] = None,
         enable_cache: bool = True,
-        project_id: Optional[str] = "sense-staging",
-        region: Optional[str] = "us-central1",
+        credentials: Optional[Credentials] = None,
+        project: Optional[str] = "sense-staging",
+        location: Optional[str] = "us-central1",
         **kwargs,
     ):
-        client = AIPlatformClient(project_id=project_id, region=region)
         if isinstance(pipeline, Pipeline):
             pipeline = KubeflowPipelinesBackend().build(pipeline)
 
         with TemporaryDirectory() as tempdir:
-            job_spec_path = os.path.join(tempdir)
-            Compiler().compile(pipeline_func=pipeline, package_path=job_spec_path)
-
-            client.create_run_from_job_spec(
-                job_spec_path=job_spec_path,
+            template_path = os.path.join(tempdir, "pipeline.json")
+            Compiler().compile(pipeline_func=pipeline, package_path=template_path)
+            PipelineJob(
+                display_name="example-vertex-pipeline",
+                template_path=template_path,
                 parameter_values=arguments,
-                # job_id=self.job_id,
+                credentials=credentials,
+                project=project,
+                location=location,
                 pipeline_root=pipeline_root,
                 enable_caching=enable_cache,
-                **kwargs,
-            )
+            ).submit()
+
+
+if __name__ == "__main__":
+    from flo.dsl import component, pipeline, Hardware
+
+    # TODO: Turn these examples into unit tests!
+
+    # Example using function decorators
+    @component(
+        hardware_spec=Hardware(
+            cpu_count=1,
+            accelerator_count=0,
+        )
+    )
+    def echo(phrase: str):
+        print(phrase)
+        return phrase
+
+    @pipeline
+    def example_pipeline():
+        _ = echo(phrase="Hello, world!")
+
+    example = example_pipeline()
+    VertexExecutor().run(
+        example,
+        project="frank-odom",
+        pipeline_root="gs://frank-odom/experiments/",
+    )
