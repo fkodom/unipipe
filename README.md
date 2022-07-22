@@ -1,5 +1,7 @@
 # flo
 
+![flo](https://upload.wikimedia.org/wikipedia/en/8/84/Flo_from_Progressive_Insurance.jpg)
+
 ## Install
 
 ```bash
