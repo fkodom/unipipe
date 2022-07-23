@@ -4,12 +4,11 @@ from contextlib import ExitStack
 from enum import Enum
 from functools import partial
 from types import TracebackType
-from typing import Dict, Optional, Callable, List
+from typing import Callable, Dict, List, Optional
 from uuid import uuid1
 
 from kfp.v2.dsl import Artifact, Input, Output
 from pydantic import BaseModel, parse_obj_as
-
 
 __all__ = [
     "AcceleratorType",

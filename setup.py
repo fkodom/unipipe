@@ -20,7 +20,6 @@ def get_version_tag() -> str:
 
 extras_require = {
     "test": ["black", "flake8", "isort", "mypy", "pytest", "pytest-cov"],
-    "kfp": ["kfp"],
 }
 extras_require["dev"] = ["pre-commit", *extras_require["test"]]
 all_require = [r for reqs in extras_require.values() for r in reqs]
@@ -38,9 +37,10 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     install_requires=[
+        "google-cloud-aiplatform",
+        "kfp",
+        "networkx",
         "pydantic",
-        # TODO: Work on relaxing this version requirement
-        "networkx~=2.8.0",
     ],
     extras_require=extras_require,
     classifiers=[

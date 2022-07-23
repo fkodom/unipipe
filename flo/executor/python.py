@@ -40,7 +40,6 @@ if __name__ == "__main__":
     from flo.dsl import component, pipeline
 
     # TODO: Turn these examples into unit tests!
-
     # Example using function decorators
     @component
     def echo(phrase: str):

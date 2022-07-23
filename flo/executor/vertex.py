@@ -4,9 +4,9 @@ import os
 from tempfile import TemporaryDirectory
 from typing import Any, Dict, Optional
 
-from kfp.v2.compiler import Compiler
-from google.cloud.aiplatform import PipelineJob
 from google.auth.credentials import Credentials
+from google.cloud.aiplatform import PipelineJob
+from kfp.v2.compiler import Compiler
 
 from flo.backend.kfp import KubeflowPipelinesBackend
 from flo.dsl import Pipeline
@@ -101,7 +101,7 @@ class VertexExecutor(Executor):
 
 
 if __name__ == "__main__":
-    from flo.dsl import component, pipeline, Accelerator, AcceleratorType, Hardware
+    from flo.dsl import Accelerator, AcceleratorType, Hardware, component, pipeline
 
     # TODO: Turn these examples into unit tests!
 
