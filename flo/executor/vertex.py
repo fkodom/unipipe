@@ -101,6 +101,8 @@ class VertexExecutor(Executor):
 
 
 if __name__ == "__main__":
+    from typing import Tuple
+
     from flo.dsl import Accelerator, AcceleratorType, Hardware, component, pipeline
 
     # TODO: Turn these examples into unit tests!
@@ -111,9 +113,9 @@ if __name__ == "__main__":
             cpus=4, accelerator=Accelerator(type=AcceleratorType.T4, count=1)
         ),
     )
-    def echo(phrase: str) -> str:
+    def echo(phrase: str) -> Tuple[str, str]:
         print(phrase)
-        return phrase
+        return phrase, phrase
 
     @pipeline
     def example_pipeline():
