@@ -2,13 +2,6 @@ from typing import NamedTuple
 
 from flo import dsl, executor
 
-# TODO: Turn these examples into unit tests!
-
-
-class EchoOutputs(NamedTuple):
-    phrase1: str
-    phrase2: str
-
 
 @dsl.component
 def echo(phrase: str) -> NamedTuple("EchoOutputs", phrase1=str, phrase2=str):
