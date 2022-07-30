@@ -130,17 +130,3 @@ def resolve_annotations(obj: Callable) -> Callable:
     out = deepcopy(obj)
     setattr(out, "__annotations__", get_annotations(obj, eval_str=True))
     return out
-
-
-# def topological_sort(components: Sequence[Component]) -> List[Component]:
-#     digraph = nx.DiGraph(
-#         [
-#             (_input, component.name)
-#             for component in components
-#             for _input in component.inputs.values()
-#         ]
-#     )
-#     ordered = nx.topological_sort(digraph)
-#     components_by_name = {component.name: component for component in components}
-#     result = [components_by_name.get(name, None) for name in ordered]
-#     return [x for x in result if x is not None]
