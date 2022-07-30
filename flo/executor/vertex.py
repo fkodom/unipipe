@@ -76,7 +76,7 @@ class VertexExecutor(Executor):
         pipeline: Any,
         arguments: Optional[Dict] = None,
         pipeline_root: Optional[str] = None,
-        enable_cache: bool = True,
+        enable_caching: bool = False,
         credentials: Optional[Credentials] = None,
         project: Optional[str] = "sense-staging",
         location: Optional[str] = "us-central1",
@@ -96,34 +96,5 @@ class VertexExecutor(Executor):
                 project=project,
                 location=location,
                 pipeline_root=pipeline_root,
-                enable_caching=enable_cache,
+                enable_caching=enable_caching,
             ).submit()
-
-
-if __name__ == "__main__":
-    from typing import Tuple
-
-    from flo.dsl import Accelerator, AcceleratorType, Hardware, component, pipeline
-
-    # TODO: Turn these examples into unit tests!
-
-    @component(
-        name="echo-1",
-        hardware=Hardware(
-            cpus=4, accelerator=Accelerator(type=AcceleratorType.T4, count=1)
-        ),
-    )
-    def echo(phrase: str) -> Tuple[str, str]:
-        print(phrase)
-        return phrase, phrase
-
-    @pipeline
-    def example_pipeline():
-        _ = echo(phrase="Hello, world!")
-
-    example = example_pipeline()
-    VertexExecutor().run(
-        example,
-        project="frank-odom",
-        pipeline_root="gs://frank-odom/experiments/",
-    )

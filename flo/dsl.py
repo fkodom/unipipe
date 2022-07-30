@@ -4,9 +4,10 @@ from contextlib import ExitStack
 from enum import Enum
 from functools import partial
 from types import TracebackType
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid1
 
+from attr import Attribute
 from kfp.v2.dsl import Artifact, Input, Output
 from pydantic import BaseModel, parse_obj_as
 
@@ -52,6 +53,37 @@ class Hardware(BaseModel):
         allow_population_by_field_name: bool = True
 
 
+class _Output:
+    pass
+
+
+# class ComponentOutput(_Output):
+#     """Work in progress.
+
+#     Needs to be integrated into the 'Component' class, so we can do things like:
+#         x = component1()
+#         y = component2(root=x)
+#         z = component3(path=y.path, value=y.value)
+#     """
+
+#     def __init__(self, value: Any):
+#         self.value = value
+
+#     def __getattribute__(self, key: str) -> ComponentOutputAttr:
+#         return ComponentOutputAttr(self, key=key)
+
+
+# class ComponentOutputAttr(_Output):
+#     def __init__(self, parent: _Output, key: str):
+#         self.parent = parent
+#         self.key = key
+
+
+class LazyAttribute(BaseModel):
+    parent: Any
+    key: str
+
+
 class Component:
     def __init__(
         self,
@@ -88,6 +120,9 @@ class Component:
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name})"
+
+    def __getattr__(self, key: str) -> Any:
+        return LazyAttribute(parent=self, key=key)
 
 
 def component(

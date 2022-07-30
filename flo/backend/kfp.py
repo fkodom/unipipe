@@ -1,16 +1,17 @@
-from __future__ import annotations
+# from __future__ import annotations
 
 from typing import Any, Dict
 
 import kfp.v2.dsl as kfp_dsl
 from kfp.v2.components.component_factory import create_component_from_func
 
-from flo.dsl import Component, Pipeline
+from flo.dsl import Component, LazyAttribute, Pipeline
+from flo.utils.misc import resolve_annotations
 
 
 def build_kubeflow_component(component: Component):
     comp = create_component_from_func(
-        func=component.func,
+        func=resolve_annotations(component.func),
         base_image=component.base_image,
         packages_to_install=component.packages_to_install,
     )
@@ -48,14 +49,27 @@ class KubeflowPipelinesBackend:
         def kfp_pipeline():
             outputs: Dict[str, Any] = {}
 
+            def resolve_value(v: Any) -> Any:
+                if isinstance(v, LazyAttribute):
+                    return outputs[v.parent.name].outputs[v.key]
+                elif isinstance(v, Component):
+                    return outputs[v.name].output
+                else:
+                    return v
+
             for _component in pipeline.components:
                 kfp_component = build_kubeflow_component(_component)
-                kwargs = {
-                    k: outputs[v.name] if isinstance(v, Component) else v
-                    for k, v in _component.inputs.items()
-                }
+                kwargs = {k: resolve_value(v) for k, v in _component.inputs.items()}
                 container_op = kfp_component(**kwargs)
                 set_hardware_attributes(container_op, _component)
-                outputs[_component.name] = container_op.output
+
+                try:
+                    outputs[_component.name] = container_op
+                except RuntimeError:
+                    outputs[_component.name] = container_op
+
+                # TODO: New class 'ComponentOutputs' that delays the output logic
+                # until the backend/executor class.  So we can delineate the
+                # behavior for Python/Docker/KFP backends.
 
         return kfp_pipeline
