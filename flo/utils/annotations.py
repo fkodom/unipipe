@@ -3,6 +3,7 @@ from __future__ import annotations
 import functools
 import sys
 import types
+from collections import namedtuple
 from copy import deepcopy
 from typing import Callable
 

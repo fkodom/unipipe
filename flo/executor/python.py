@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional
 
 from flo.dsl import Component, LazyAttribute, Pipeline
 from flo.executor.base import Executor
+from flo.utils.annotations import get_annotations
 
 
 class PythonExecutor(Executor):
@@ -29,4 +30,7 @@ class PythonExecutor(Executor):
             # TODO: Analyze signature for Input/Output types???
             _kwargs = {k: resolve_value(v) for k, v in _component.inputs.items()}
             result = _component.func(**_kwargs)
+            return_type = get_annotations(_component.func, eval_str=True)["return"]
+            if issubclass(return_type, tuple):
+                result = return_type(*result)
             arguments[_component.name] = result

@@ -4,20 +4,21 @@ from contextlib import ExitStack
 from enum import Enum
 from functools import partial
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import uuid1
 
-from attr import Attribute
 from kfp.v2.dsl import Artifact, Input, Output
 from pydantic import BaseModel, parse_obj_as
 
+from flo.utils.annotations import get_annotations
+
 __all__ = [
     "AcceleratorType",
-    "Artifact",
+    # "Artifact",
     "Component",
     "Hardware",
-    "Input",
-    "Output",
+    # "Input",
+    # "Output",
     "Pipeline",
     "component",
     "pipeline",
@@ -53,30 +54,18 @@ class Hardware(BaseModel):
         allow_population_by_field_name: bool = True
 
 
-class _Output:
-    pass
+ALLOWED_OUTPUT_TYPES = (str, int, float, bool)
 
 
-# class ComponentOutput(_Output):
-#     """Work in progress.
-
-#     Needs to be integrated into the 'Component' class, so we can do things like:
-#         x = component1()
-#         y = component2(root=x)
-#         z = component3(path=y.path, value=y.value)
-#     """
-
-#     def __init__(self, value: Any):
-#         self.value = value
-
-#     def __getattribute__(self, key: str) -> ComponentOutputAttr:
-#         return ComponentOutputAttr(self, key=key)
-
-
-# class ComponentOutputAttr(_Output):
-#     def __init__(self, parent: _Output, key: str):
-#         self.parent = parent
-#         self.key = key
+class Outputs(BaseModel):
+    def __init__(self, **data: Any) -> None:
+        for key, value in data.items():
+            if not isinstance(value, ALLOWED_OUTPUT_TYPES):
+                raise TypeError(
+                    f"Invalid {value=} for {key=}. Allowed types are "
+                    f"{ALLOWED_OUTPUT_TYPES}, but found {type(value)=}."
+                )
+        super().__init__(**data)
 
 
 class LazyAttribute(BaseModel):
@@ -121,8 +110,34 @@ class Component:
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name})"
 
-    def __getattr__(self, key: str) -> Any:
+    @property
+    def _return_type(self):
+        return get_annotations(self.func, eval_str=True)["return"]
+
+    def __len__(self) -> int:
+        if issubclass(self._return_type, tuple):
+            return len(self._return_type._fields)
+
+        raise TypeError(
+            "Only components with 'NamedTuple' return type have a defined length. "
+            f"Found return type {self._return_type}."
+        )
+
+    def __iter__(self):
+        return (self[i] for i in range(len(self)))
+
+    def __getattr__(self, key: str) -> LazyAttribute:
         return LazyAttribute(parent=self, key=key)
+
+    def __getitem__(self, idx: int) -> LazyAttribute:
+        if issubclass(self._return_type, tuple):
+            key = self._return_type._fields[idx]
+            return LazyAttribute(parent=self, key=key)
+
+        raise TypeError(
+            "Only components with 'NamedTuple' return type have '__getitem__' method. "
+            f"Found return type {self._return_type}."
+        )
 
 
 def component(
