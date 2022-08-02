@@ -1,13 +1,13 @@
 from __future__ import annotations
 
+import logging
 from contextlib import ExitStack
 from enum import Enum
-from functools import partial
+from functools import partial, wraps
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
 from uuid import uuid1
 
-from kfp.v2.dsl import Artifact, Input, Output
 from pydantic import BaseModel, parse_obj_as
 
 from flo.utils.annotations import get_annotations
@@ -73,12 +73,28 @@ class LazyAttribute(BaseModel):
     key: str
 
 
+def wrap_logging_info(
+    func: Callable, component_name: str, logging_level: int
+) -> Callable:
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        import logging
+
+        logging.getLogger().setLevel(logging_level)
+        result = func(*args, **kwargs)
+        logging.info(f"[{component_name}] - {result}")
+        return result
+
+    return wrapped
+
+
 class Component:
     def __init__(
         self,
         func: Callable,
         name: Optional[str] = None,
         inputs: Optional[Dict] = None,
+        logging_level: Optional[int] = None,
         # Not used by the local executor
         base_image: Optional[str] = None,
         packages_to_install: Optional[List[str]] = None,
@@ -95,9 +111,13 @@ class Component:
             uuid = str(uuid1())[:8]
             name = f"{func.__name__}-{uuid}"
 
-        self.func = func
         self.name = name.replace("_", "-")
+        logging_level = logging_level or logging.INFO
+        self.func = wrap_logging_info(
+            func, component_name=name, logging_level=logging_level
+        )
         self.inputs = inputs or {}
+        self.logging_level = logging_level
         self.base_image = base_image
         self.packages_to_install = packages_to_install
         self.hardware = parse_obj_as(Hardware, hardware) if hardware else Hardware()
@@ -143,6 +163,7 @@ class Component:
 def component(
     func: Optional[Callable] = None,
     name: Optional[str] = None,
+    logging_level: Optional[int] = None,
     base_image: Optional[str] = None,
     packages_to_install: Optional[List[str]] = None,
     hardware: Optional[Hardware] = None,
@@ -151,6 +172,7 @@ def component(
     new_component = partial(
         Component,
         name=name,
+        logging_level=logging_level,
         base_image=base_image,
         packages_to_install=packages_to_install,
         hardware=hardware,
@@ -243,35 +265,3 @@ def pipeline(
         return wrapper
     else:
         return wrapped_pipeline
-
-
-if __name__ == "__main__":
-    # TODO: Turn these examples into unit tests!
-
-    # Example using function decorators
-    @component
-    def echo(phrase: str):
-        print(phrase)
-        return phrase
-
-    @pipeline
-    def example_pipeline():
-        echo1 = echo(phrase="Hello, world!")
-        _ = echo(phrase=echo1)
-
-    example = example_pipeline()
-    print(len(example))
-    print(example.components[1].inputs)
-
-    # Example using context managers, with an additional nested pipeline.
-    # Not sure yet if/when child pipelines would be useful, but it's possible anyway.
-    with Pipeline() as parent:
-        echo1 = echo(phrase="Hello, world!")
-        echo2 = echo(phrase=echo1)
-
-        with Pipeline() as child:
-            echo3 = echo(phrase="Goodbye, world!")
-            print(len(child))
-
-    print(len(parent))
-    print(parent.components[1].inputs)

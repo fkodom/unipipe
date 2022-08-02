@@ -37,9 +37,9 @@ setup(
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
     install_requires=[
+        "docker",
         "google-cloud-aiplatform",
         "kfp",
-        "networkx",
         "pydantic",
     ],
     extras_require=extras_require,
