@@ -1,9 +1,10 @@
 import inspect
+import json
 import logging
 import os
 import tempfile
 import textwrap
-from typing import Dict, Iterable
+from typing import Any, Dict, Iterable, Optional, TypedDict
 
 import docker
 from docker.errors import BuildError
@@ -25,15 +26,17 @@ logging.getLogger().setLevel({logging_level})
 
 COMMAND = """
 import argparse
+import json
+
 parser = argparse.ArgumentParser()
 {arguments}
 args = parser.parse_args()
 
-@dsl.pipeline
-def _pipeline():
-    {function_name}(**vars(args))
-
-result = {function_name}(**vars(args))
+func = {function_name}(**vars(args)).func
+output = func(**vars(args))
+with open('/app/output.json', "w") as f:
+    json.dump(dict(output=output), f)
+print()
 """
 
 
@@ -94,21 +97,37 @@ def build_docker_image(component: Component, tag: str):
     return tag
 
 
-def build_and_run(component: Component, rm: bool = True):
+class Volume(TypedDict):
+    bind: str
+    mode: str
+
+
+def build_and_run(
+    component: Component,
+    arguments: Optional[Dict[str, Any]] = None,
+    volumes: Optional[Dict[str, Volume]] = None,
+    remove: bool = True,
+):
     client = docker.from_env()
-    script = build_script(component)
     tag = build_docker_image(component, tag=_component.name)
+    if arguments is None:
+        arguments = {}
+    if volumes is None:
+        volumes = {}
 
     with tempfile.TemporaryDirectory() as tempdir:
         script_path = os.path.join(tempdir, "main.py")
+        output_json = os.path.join(tempdir, "output.json")
+        script = build_script(component)
         with open(script_path, "w") as f:
             f.write(script)
 
+        volumes[tempdir] = {"bind": "/app/", "mode": "rw"}
         container = client.containers.run(
             image=_component.name,
             command="python3 /app/main.py --name=world",
-            volumes={tempdir: {"bind": "/app/", "mode": "rw"}},
-            remove=True,
+            volumes=volumes,
+            remove=remove,
             detach=True,
         )
         for line in container.logs(stream=True):
@@ -116,6 +135,11 @@ def build_and_run(component: Component, rm: bool = True):
 
         container.wait()
         client.images.remove(tag, noprune=False)
+
+        with open(output_json, "r") as f:
+            result = json.load(f)["output"]
+
+    return result
 
 
 if __name__ == "__main__":
@@ -126,4 +150,5 @@ if __name__ == "__main__":
         return f"Hello, {name}!"
 
     _component = hello(name="world")
-    build_and_run(_component)
+    message = build_and_run(_component)
+    print(message)

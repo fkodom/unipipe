@@ -40,9 +40,6 @@ def pipeline():
     hello(first_name=lord_stark.first, last_name=lord_stark.last)
     house_motto(last_name=lord_stark.last)
 
-    breakpoint()
-    pass
-
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
