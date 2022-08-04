@@ -27,7 +27,6 @@ class PythonExecutor(Executor):
                 return v
 
         for _component in pipeline.components:
-            # TODO: Analyze signature for Input/Output types???
             _kwargs = {k: resolve_value(v) for k, v in _component.inputs.items()}
             result = _component.func(**_kwargs)
             return_type = get_annotations(_component.func, eval_str=True)["return"]

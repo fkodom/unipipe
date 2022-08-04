@@ -124,9 +124,10 @@ def build_and_run(
             f.write(script)
 
         volumes[tempdir] = {"bind": "/app/", "mode": "rw"}
+        args = " ".join([f"--{k}='{v}'" for k, v in arguments.items()])
         container = client.containers.run(
             image=component.name,
-            command="python3 /app/main.py --name=world",
+            command=f"python3 /app/main.py {args}",
             volumes=volumes,
             remove=remove,
             detach=True,
@@ -141,7 +142,8 @@ def build_and_run(
             # ],
         )
         for line in container.logs(stream=True):
-            if line.strip():
+            line = line.strip()
+            if line:
                 print(line.decode("utf-8"))
 
         container.wait()
@@ -173,24 +175,9 @@ class DockerExecutor(Executor):
                 return v
 
         for _component in pipeline.components:
-            # TODO: Analyze signature for Input/Output types???
-            arguments = {k: resolve_value(v) for k, v in _component.inputs.items()}
-            result = build_and_run(_component, arguments=arguments)
+            _arguments = {k: resolve_value(v) for k, v in _component.inputs.items()}
+            result = build_and_run(_component, arguments=_arguments)
             return_type = get_annotations(_component.func, eval_str=True)["return"]
             if issubclass(return_type, tuple):
                 result = return_type(*result)
             arguments[_component.name] = result
-
-
-if __name__ == "__main__":
-    from flo import dsl
-
-    @dsl.component
-    def hello(name: str) -> str:
-        return f"Hello, {name}!"
-
-    @dsl.pipeline
-    def pipeline():
-        hello(name="world")
-
-    DockerExecutor().run(pipeline=pipeline())

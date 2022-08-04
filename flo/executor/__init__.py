@@ -2,10 +2,12 @@ from typing import Dict, Optional, Type, Union
 
 from flo.dsl import Pipeline
 from flo.executor.base import Executor
+from flo.executor.docker import DockerExecutor
 from flo.executor.python import PythonExecutor
 from flo.executor.vertex import VertexExecutor
 
 EXECUTORS_BY_NAME: Dict[str, Type[Executor]] = {
+    "docker": DockerExecutor,
     "python": PythonExecutor,
     "vertex": VertexExecutor,
 }
