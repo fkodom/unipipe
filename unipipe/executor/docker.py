@@ -141,7 +141,9 @@ def build_and_run(
             # ],
         )
         for line in container.logs(stream=True):
-            print(line.decode("utf-8"))
+            line = line.strip()
+            if line:
+                print(line.decode("utf-8"))
 
         container.wait()
         client.images.remove(tag, noprune=False)
