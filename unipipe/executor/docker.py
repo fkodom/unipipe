@@ -37,7 +37,6 @@ func = {function_name}(**vars(args)).func
 output = func(**vars(args))
 with open('/app/output.json', "w") as f:
     json.dump(dict(output=output), f)
-print()
 """
 
 
@@ -142,9 +141,7 @@ def build_and_run(
             # ],
         )
         for line in container.logs(stream=True):
-            line = line.strip()
-            if line:
-                print(line.decode("utf-8"))
+            print(line.decode("utf-8"))
 
         container.wait()
         client.images.remove(tag, noprune=False)

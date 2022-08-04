@@ -1,14 +1,18 @@
-# flo
+# unipipe
 
-![flo](https://upload.wikimedia.org/wikipedia/en/8/84/Flo_from_Progressive_Insurance.jpg)
+**Uni**fied **pipe**line library. 
+
+Build pipelines in Python that run anywhere -- on your laptop, on the server, and in the cloud.  
+
+![flo](doc/img/unipipe.png)
 
 ## Install
 
 ```bash
-pip install "flo @ git+ssh://git@github.com/fkodom/flo.git"
+pip install "unipipe @ git+ssh://git@github.com/fkodom/unipipe.git"
 
 # Install all dev dependencies (tests etc.)
-pip install "flo[all] @ git+ssh://git@github.com/fkodom/flo.git"
+pip install "unipipe[all] @ git+ssh://git@github.com/fkodom/unipipe.git"
 
 # Setup pre-commit hooks
 pre-commit install
