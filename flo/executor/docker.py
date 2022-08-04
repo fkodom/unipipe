@@ -9,7 +9,8 @@ from typing import Any, Dict, Iterable, Optional, TypedDict
 import docker
 from docker.errors import BuildError
 
-from flo.dsl import Component
+from flo.dsl import Component, LazyAttribute, Pipeline
+from flo.executor.base import Executor
 from flo.utils.annotations import get_annotations
 
 IMPORTS = """
@@ -109,7 +110,7 @@ def build_and_run(
     remove: bool = True,
 ):
     client = docker.from_env()
-    tag = build_docker_image(component, tag=_component.name)
+    tag = build_docker_image(component, tag=component.name)
     if arguments is None:
         arguments = {}
     if volumes is None:
@@ -124,14 +125,24 @@ def build_and_run(
 
         volumes[tempdir] = {"bind": "/app/", "mode": "rw"}
         container = client.containers.run(
-            image=_component.name,
+            image=component.name,
             command="python3 /app/main.py --name=world",
             volumes=volumes,
             remove=remove,
             detach=True,
+            # TODO: Add logic for enabling GPUs when requested.
+            # Example code from the Docker for Python SDK pasted as a placeholder.
+            #
+            # device_requests=[
+            #     docker.types.DeviceRequest(
+            #         device_ids=["0,2"],
+            #         capabilities=[["gpu"]],
+            #     )
+            # ],
         )
         for line in container.logs(stream=True):
-            print(line.decode("utf-8"))
+            if line.strip():
+                print(line.decode("utf-8"))
 
         container.wait()
         client.images.remove(tag, noprune=False)
@@ -142,6 +153,35 @@ def build_and_run(
     return result
 
 
+class DockerExecutor(Executor):
+    def run(
+        self,
+        pipeline: Pipeline,
+        arguments: Optional[Dict] = None,
+        **kwargs,
+    ):
+        if arguments is None:
+            arguments = {}
+
+        def resolve_value(v: Any) -> Any:
+            if isinstance(v, LazyAttribute):
+                return getattr(resolve_value(v.parent), v.key)
+            elif isinstance(v, Component):
+                assert isinstance(arguments, dict)
+                return arguments[v.name]
+            else:
+                return v
+
+        for _component in pipeline.components:
+            # TODO: Analyze signature for Input/Output types???
+            arguments = {k: resolve_value(v) for k, v in _component.inputs.items()}
+            result = build_and_run(_component, arguments=arguments)
+            return_type = get_annotations(_component.func, eval_str=True)["return"]
+            if issubclass(return_type, tuple):
+                result = return_type(*result)
+            arguments[_component.name] = result
+
+
 if __name__ == "__main__":
     from flo import dsl
 
@@ -149,6 +189,8 @@ if __name__ == "__main__":
     def hello(name: str) -> str:
         return f"Hello, {name}!"
 
-    _component = hello(name="world")
-    message = build_and_run(_component)
-    print(message)
+    @dsl.pipeline
+    def pipeline():
+        hello(name="world")
+
+    DockerExecutor().run(pipeline=pipeline())
