@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from flo.dsl import Component, LazyAttribute, Pipeline
-from flo.executor.base import Executor
-from flo.utils.annotations import get_annotations
+from unipipe.dsl import Component, LazyAttribute, Pipeline
+from unipipe.executor.base import Executor
+from unipipe.utils.annotations import get_annotations
 
 
 class PythonExecutor(Executor):

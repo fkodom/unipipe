@@ -10,7 +10,7 @@ from uuid import uuid1
 
 from pydantic import BaseModel, parse_obj_as
 
-from flo.utils.annotations import get_annotations
+from unipipe.utils.annotations import get_annotations
 
 __all__ = [
     "AcceleratorType",

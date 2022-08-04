@@ -8,9 +8,9 @@ from google.auth.credentials import Credentials
 from google.cloud.aiplatform import PipelineJob
 from kfp.v2.compiler import Compiler
 
-from flo.backend.kfp import KubeflowPipelinesBackend
-from flo.dsl import Pipeline
-from flo.executor.base import Executor
+from unipipe.backend.kfp import KubeflowPipelinesBackend
+from unipipe.dsl import Pipeline
+from unipipe.executor.base import Executor
 
 # class PipelineState(str, Enum):
 #     """

@@ -5,8 +5,8 @@ from typing import Any, Dict
 import kfp.v2.dsl as kfp_dsl
 from kfp.v2.components.component_factory import create_component_from_func
 
-from flo.dsl import Component, LazyAttribute, Pipeline
-from flo.utils.annotations import resolve_annotations
+from unipipe.dsl import Component, LazyAttribute, Pipeline
+from unipipe.utils.annotations import resolve_annotations
 
 
 def build_kubeflow_component(component: Component):

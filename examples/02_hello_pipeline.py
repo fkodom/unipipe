@@ -1,7 +1,7 @@
 import argparse
 
-import flo
-from flo import dsl
+import unipipe
+from unipipe import dsl
 
 
 @dsl.component
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     parser.add_argument("--executor", default="python")
     args = parser.parse_args()
 
-    flo.run(
+    unipipe.run(
         executor=args.executor,
         pipeline=pipeline(),
         project="frank-odom",

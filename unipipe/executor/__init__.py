@@ -1,10 +1,10 @@
 from typing import Dict, Optional, Type, Union
 
-from flo.dsl import Pipeline
-from flo.executor.base import Executor
-from flo.executor.docker import DockerExecutor
-from flo.executor.python import PythonExecutor
-from flo.executor.vertex import VertexExecutor
+from unipipe.dsl import Pipeline
+from unipipe.executor.base import Executor
+from unipipe.executor.docker import DockerExecutor
+from unipipe.executor.python import PythonExecutor
+from unipipe.executor.vertex import VertexExecutor
 
 EXECUTORS_BY_NAME: Dict[str, Type[Executor]] = {
     "docker": DockerExecutor,
@@ -25,7 +25,7 @@ def run(
 
 
 if __name__ == "__main__":
-    from flo.dsl import Hardware, component, pipeline
+    from unipipe.dsl import Hardware, component, pipeline
 
     # TODO: Turn these examples into unit tests!
 

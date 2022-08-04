@@ -7,7 +7,7 @@ import setuptools
 
 def get_version_tag() -> str:
     try:
-        env_key = "FLO_VERSION".upper()
+        env_key = "UNIPIPE_VERSION".upper()
         version = os.environ[env_key]
     except KeyError:
         version = getoutput("git describe --tags --abbrev=0")
@@ -27,11 +27,11 @@ extras_require["all"] = all_require
 
 
 setup(
-    name="flo",
+    name="unipipe",
     version=get_version_tag(),
     author="Frank Odom",
     author_email="frank.odom.iii@gmail.com",
-    url="https://github.com/fkodom/flo",
+    url="https://github.com/fkodom/unipipe",
     packages=setuptools.find_packages(exclude=["tests"]),
     description="project_description",
     long_description=open("README.md").read(),

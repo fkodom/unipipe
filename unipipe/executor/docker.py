@@ -6,17 +6,17 @@ import tempfile
 import textwrap
 from typing import Any, Dict, Iterable, Optional, TypedDict
 
-import docker
 from docker.errors import BuildError
 
-from flo.dsl import Component, LazyAttribute, Pipeline
-from flo.executor.base import Executor
-from flo.utils.annotations import get_annotations
+import docker
+from unipipe.dsl import Component, LazyAttribute, Pipeline
+from unipipe.executor.base import Executor
+from unipipe.utils.annotations import get_annotations
 
 IMPORTS = """
-import flo
-from flo import dsl
-from flo.dsl import *
+import unipipe
+from unipipe import dsl
+from unipipe.dsl import *
 from typing import *
 """
 
@@ -61,8 +61,8 @@ DOCKERFILE = """
 FROM {base_image}
 
 WORKDIR /app
-COPY ./ ./flo
-RUN pip install ./flo
+COPY ./ ./unipipe
+RUN pip install ./unipipe
 RUN pip install {packages}
 """
 
