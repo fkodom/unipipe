@@ -79,8 +79,8 @@ Please see the [examples/](./examples/) folder for examples and tutorials on bui
 1. **`unipipe` was designed to mitigate issues with Kubeflow Pipelines (KFP).**
     * Kubeflow and KFP are often used by machine learning engineers to orchestrate training jobs, data preprocessing, and other computationally intensive tasks.
 2. **KFP pipelines only run on Kubeflow.**
-    * Creating a full-blown Kubeflow deployment requires specialized knowledge, which is unfamiliar to many practitioners. It also requires additional computational resources, which make it expensive for individuals and small teams to use.
-    * Managed, serverless platforms like Vertex (Google Cloud) have emerged, which automated all of that specialized knowledge and infrastructure. But still, pipelines only run on KFP/Vertex -- the same pipeline won't run on your laptop without a ton of extra effort.
+    * Kubeflow requires specialized knowledge and additional compute resources. It can be expensive and/or impractical for individuals and small teams.
+    * Managed, serverless platforms like Vertex (Google Cloud) exist, which automate all of that. But still, pipelines only run on KFP/Vertex -- not on your laptop.
 3. **Why write the same pipeline twice?**
-    * To account for the issues above, developers write multiple pipeline scripts. One runs on your laptop, and another is designed to run in the cloud. 
+    * KFP developers often write multiple pipeline scripts. One for their laptop, and another for the cloud. 
     * TODO: Finish this section...
