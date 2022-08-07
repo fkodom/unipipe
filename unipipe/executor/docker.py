@@ -7,6 +7,7 @@ import textwrap
 from typing import Any, Dict, Iterable, Optional, TypedDict
 
 from docker.errors import BuildError
+from docker.types import DeviceRequest
 
 import docker
 from unipipe.dsl import Component, LazyAttribute, Pipeline
@@ -124,21 +125,28 @@ def build_and_run(
 
         volumes[tempdir] = {"bind": "/app/", "mode": "rw"}
         args = " ".join([f"--{k}='{v}'" for k, v in arguments.items()])
+
+        device_requests = []
+        accelerator = component.hardware.accelerator
+        if accelerator is not None and accelerator.count:
+            # TODO:
+            #   - Make this logic work for TPUs as well
+            #   - Allow users to pick specific device IDs?
+            device_ids = list(range(int(accelerator.count)))
+            device_requests.append(
+                DeviceRequest(
+                    device_ids=[",".join([str(i) for i in device_ids])],
+                    capabilities=[["gpu"]],
+                )
+            )
+
         container = client.containers.run(
             image=component.name,
-            command=f"python3 /app/main.py {args}",
+            command=f"python /app/main.py {args}",
             volumes=volumes,
             remove=remove,
             detach=True,
-            # TODO: Add logic for enabling GPUs when requested.
-            # Example code from the Docker for Python SDK pasted as a placeholder.
-            #
-            # device_requests=[
-            #     docker.types.DeviceRequest(
-            #         device_ids=["0,2"],
-            #         capabilities=[["gpu"]],
-            #     )
-            # ],
+            device_requests=device_requests,
         )
         for line in container.logs(stream=True):
             line = line.strip()
@@ -146,7 +154,7 @@ def build_and_run(
                 print(line.decode("utf-8"))
 
         container.wait()
-        client.images.remove(tag, noprune=False)
+        client.images.remove(tag, force=True, noprune=False)
 
         with open(output_json, "r") as f:
             result = json.load(f)["output"]
