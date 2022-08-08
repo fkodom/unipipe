@@ -25,3 +25,7 @@ if __name__ == "__main__":
         project="frank-odom",
         pipeline_root="gs://frank-odom/experiments/",
     )
+
+    # Expected output:
+    #
+    # INFO:root:[hello-6028507e] - Hello, world!

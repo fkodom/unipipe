@@ -5,6 +5,7 @@ import unipipe
 from unipipe import dsl
 
 
+# NOTE: Multi-output components should use the 'NamedTuple' return type!
 @dsl.component
 def split_name(name: str) -> NamedTuple("Output", first=str, last=str):  # type: ignore
     names = name.split(" ")
@@ -26,8 +27,8 @@ def house_motto(last_name: str) -> str:
 
 @dsl.pipeline
 def pipeline():
-    # Multiple results can be used as if they were 'NamedTuple' instances.
-    # The calculation of each value is delayed until 'flo.run' below, so we can
+    # Multi-output results can be used as if they were 'NamedTuple' instances.
+    # The calculation of each value is delayed until 'unipipe.run' below, so we can
     # easily transfer it to each backend/executor type.
 
     # Example destructuring like a normal 'tuple' object:
@@ -52,3 +53,12 @@ if __name__ == "__main__":
         project="frank-odom",
         pipeline_root="gs://frank-odom/experiments/",
     )
+
+    # Expected output:
+    #
+    # INFO:root:[split_name-48b0285e] - ('Tyrion', 'Lannister')
+    # INFO:root:[hello-48b02d2c] - Seven blessings, Tyrion of house Lannister!
+    # INFO:root:[house_motto-48b02e8a] - A Lannister always pays their debts...
+    # INFO:root:[split_name-48b02fac] - ('Ned', 'Stark')
+    # INFO:root:[hello-48b03150] - Seven blessings, Ned of house Stark!
+    # INFO:root:[house_motto-48b032cc] - Winter is coming...
