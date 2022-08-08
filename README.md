@@ -8,9 +8,10 @@ Build batch pipelines in Python that run anywhere -- on your laptop, on the serv
     <img src="./doc/img/pipe.png" height=256 width=256/>
 </p>
 
+
 ## About
 
-`unipipe` makes it easy to build batch pipelines in Python, then run them either locally or in the cloud. It was originally created for machine learning workflows, but it works the same for *any* batch data processing jobs.
+`unipipe` makes it easy to build batch pipelines in Python, then run them either locally or in the cloud. It was originally created for machine learning workflows, but it works for any batch data processing pipeline.
 
 
 ## Install
@@ -69,9 +70,7 @@ Expected output:
 INFO:root:[say_hello-1603ae3e] - Hello, world!
 ```
 
-## More Examples
-
-Please see the [examples/](./examples/) folder for examples and tutorials on building pipelines with `unipipe`.
+More examples and tutorials available in [examples/](./examples/).
 
 
 ## Why `unipipe`?
