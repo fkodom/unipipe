@@ -93,3 +93,13 @@ More examples and tutorials available in [examples/](./examples/).
 3. **Why write the same pipeline twice?**
     * KFP developers often write multiple pipeline scripts. One for their laptop, and another for the cloud. 
     * TODO: Finish this section...
+
+
+## TODO
+
+`unipipe` is still in pre-alpha development, so there are lots of things to do. :sweat_smile:  I won't list everything here -- just some of the larger, long-term goals.
+
+1. Add executor for KFP clusters, in addition to Vertex.
+2. Better up-front type checking (i.e. before running the pipeline).
+3. More unit tests, more test coverage
+4. Apache Beam backend and executor (???)
