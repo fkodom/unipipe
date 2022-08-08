@@ -1,4 +1,4 @@
-ARG PY_VERSION=3.10
+ARG PY_VERSION=3.9
 
 FROM python:$PY_VERSION-slim
 ENV DEBIAN_FRONTEND="noninteractive"
