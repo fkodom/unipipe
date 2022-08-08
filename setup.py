@@ -19,6 +19,8 @@ def get_version_tag() -> str:
 
 
 extras_require = {
+    "docker": ["docker"],
+    "vertex": ["kfp", "google-cloud-aiplatform"],
     "test": ["black", "flake8", "isort", "mypy", "pytest", "pytest-cov"],
 }
 extras_require["dev"] = ["pre-commit", *extras_require["test"]]
@@ -36,12 +38,7 @@ setup(
     description="project_description",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    install_requires=[
-        "docker",
-        "google-cloud-aiplatform",
-        "kfp",
-        "pydantic",
-    ],
+    install_requires=["pydantic"],
     extras_require=extras_require,
     classifiers=[
         "Programming Language :: Python :: 3",
