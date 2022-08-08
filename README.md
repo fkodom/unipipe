@@ -18,17 +18,25 @@ Build batch pipelines in Python that run anywhere -- on your laptop, on the serv
 
 From PyPI:
 ```bash
+# Minimal install
 pip install unipipe
+
+# With additional executors (e.g. 'docker', 'vertex')
+pip install unipipe[vertex]
 ```
 
 From source:
 ```bash
+# Minimal install
 pip install "unipipe @ git+ssh://git@github.com/fkodom/unipipe.git"
+
+# With additional executors (e.g. 'docker', 'vertex')
+pip install[vertex] "unipipe @ git+ssh://git@github.com/fkodom/unipipe.git"
 ```
 
-If you'd like to contribute, install all dev dependencies and pre-commit hooks:
+If you'd like to contribute, install all dependencies and pre-commit hooks:
 ```bash
-# Install all dev dependencies (tests etc.)
+# Install all dependencies
 pip install "unipipe[all] @ git+ssh://git@github.com/fkodom/unipipe.git"
 # Setup pre-commit hooks
 pre-commit install
