@@ -57,6 +57,10 @@ def build_script(component: Component) -> str:
     return "\n".join([IMPORTS, _logging, function, command])
 
 
+# TODO: Once stable release is available in PyPI:
+#   +++ pip install unipipe
+#   --- pip install ./unipipe
+
 DOCKERFILE = """
 FROM {base_image}
 
@@ -74,9 +78,16 @@ def _record_build_logs(logs: Iterable[Dict[str, str]], level: int):
 
 
 def build_docker_image(component: Component, tag: str):
-    client = docker.from_env()
-    base_image = component.base_image or "python:3.8"
+    base_image = component.base_image
+    if base_image is None:
+        accelerator = component.hardware.accelerator
+        if accelerator is not None and accelerator.count:
+            base_image = "fkodom/unipipe:latest-cuda"
+        else:
+            base_image = "fodom/unipipe:latest"
+
     logging.info(f"Building Docker image: ({tag=}, {base_image=})")
+    client = docker.from_env()
     dockerfile = DOCKERFILE.format(
         base_image=base_image,
         packages=" ".join(component.packages_to_install or ["pip"]),
