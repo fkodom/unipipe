@@ -9,7 +9,17 @@ include the 'hardware' keyword in our decorator, and specify what type/count of
 accelerator we need.
 
 NOTE: Currently, the accelerator 'type' has no effect for 'python' and 'docker'
-executors. In the future, you may be able to specify
+executors. In the future, you may be able to specify.
+
+In addition to accelerators, 'Hardware' has the follow inputs/properties:
+
+    Hardware
+        cpus (str | int | None) - Requested vCPU cores. Append "m" for "milli-CPUs".
+        memory (str | int | None) - Requested RAM. Optionally append "K" (kilobytes),
+            "M" (megabytes), or "G" (gigabytes).
+        accelerator (Dict | None)
+            count (str | int | None) - Number of accelerators
+            type (str | None) - Name/type of the accelerator
 """
 
 
