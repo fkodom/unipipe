@@ -5,16 +5,19 @@ from unipipe import dsl
 
 
 @dsl.component
+def get_first_name(name: str) -> str:
+    return name.split(" ")[0]
+
+
+@dsl.component
 def hello(name: str) -> str:
     return f"Hello, {name}!"
 
 
 @dsl.pipeline
 def pipeline():
-    message = hello(name="world")
-    repeated = hello(name=message)
-    hello(name=message)
-    hello(name=repeated)
+    first_name = get_first_name(name="Tyrion Lannister")
+    hello(name=first_name)
 
 
 if __name__ == "__main__":
@@ -31,7 +34,4 @@ if __name__ == "__main__":
 
     # Expected output:
     #
-    # INFO:root:[hello-6b91e1c8] - Hello, world!
-    # INFO:root:[hello-6b91e3e4] - Hello, Hello, world!!
-    # INFO:root:[hello-6b91e506] - Hello, Hello, world!!
-    # INFO:root:[hello-6b91e60a] - Hello, Hello, Hello, world!!!
+    # INFO:root:[hello-6b91e1c8] - Hello, Tyrion!
