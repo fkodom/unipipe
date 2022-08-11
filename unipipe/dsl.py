@@ -5,11 +5,12 @@ from contextlib import ExitStack
 from enum import Enum
 from functools import partial, wraps
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
 from uuid import uuid1
 
 from pydantic import BaseModel, parse_obj_as
 
+from unipipe.utils import ops
 from unipipe.utils.annotations import get_annotations
 
 __all__ = [
@@ -72,6 +73,15 @@ class LazyAttribute(BaseModel):
     parent: Any
     key: str
 
+    def __add__(self, other: Any) -> Component:
+        return dispatch_to_component(ops.add, a=self, b=other)
+
+    def __sub__(self, other: Any) -> Component:
+        return dispatch_to_component(ops.sub, a=self, b=other)
+
+    def __eq__(self, other: Any) -> Component:  # type: ignore
+        return dispatch_to_component(ops.equal, a=self, b=other)
+
 
 def wrap_logging_info(
     func: Callable, component_name: str, logging_level: int
@@ -110,13 +120,14 @@ class Component:
         if name is None:
             uuid = str(uuid1())[:8]
             name = f"{func.__name__}-{uuid}"
+        inputs = inputs or {}
 
         self.name = name.replace("_", "-")
         logging_level = logging_level or logging.INFO
         self.func = wrap_logging_info(
             func, component_name=name, logging_level=logging_level
         )
-        self.inputs = inputs or {}
+        self.inputs = inputs
         self.logging_level = logging_level
         self.base_image = base_image
         self.packages_to_install = packages_to_install
@@ -146,6 +157,15 @@ class Component:
     def __iter__(self):
         return (self[i] for i in range(len(self)))
 
+    def __add__(self, other: Any) -> Component:
+        return dispatch_to_component(ops.add, a=self, b=other)
+
+    def __sub__(self, other: Any) -> Component:
+        return dispatch_to_component(ops.sub, a=self, b=other)
+
+    def __eq__(self, other: Any) -> Component:  # type: ignore
+        return dispatch_to_component(ops.equal, a=self, b=other)
+
     def __getattr__(self, key: str) -> LazyAttribute:
         return LazyAttribute(parent=self, key=key)
 
@@ -168,7 +188,7 @@ def component(
     packages_to_install: Optional[List[str]] = None,
     hardware: Optional[Hardware] = None,
     **kwargs,
-):
+) -> Callable[..., Component]:
     new_component = partial(
         Component,
         name=name,
@@ -179,19 +199,36 @@ def component(
         **kwargs,
     )
 
-    def wrapped_component(**inputs):
-        return new_component(func=func, inputs=inputs)
+    if func is None:
 
-    def wrapper(func: Callable) -> Callable:
+        def wrapper(func: Callable) -> Callable:
+            @wraps(func)
+            def wrapped_component(**inputs):
+                return new_component(func=func, inputs=inputs)
+
+            return wrapped_component
+
+        return wrapper
+    else:
+
+        @wraps(func)
         def wrapped_component(**inputs):
             return new_component(func=func, inputs=inputs)
 
         return wrapped_component
 
-    if func is None:
-        return wrapper
-    else:
-        return wrapped_component
+
+DUNDER_HARDWARE = Hardware(cpus=1, memory="512M")
+
+
+def dispatch_to_component(dispatch: ops.MultipleDispatch, **kwargs) -> Component:
+    func = dispatch[kwargs]
+    component_func = component(func=func, hardware=DUNDER_HARDWARE)
+    return component_func(**kwargs)
+
+
+# class Condition(ExitStack):
+#     pass
 
 
 class Pipeline(ExitStack):
@@ -248,20 +285,22 @@ def pipeline(
     name: Optional[str] = None,
     **kwargs,
 ):
-    def wrapped_pipeline(**inputs):
-        with Pipeline(name=name, **kwargs) as pipe:
-            func(**inputs)
-        return pipe
+    if func is None:
 
-    def wrapper(func: Callable) -> Callable:
+        def wrapper(func: Callable) -> Callable:
+            def wrapped_pipeline(**inputs):
+                with Pipeline(name=name, **kwargs) as pipe:
+                    func(**inputs)
+                return pipe
+
+            return wrapped_pipeline
+
+        return wrapper
+    else:
+
         def wrapped_pipeline(**inputs):
             with Pipeline(name=name, **kwargs) as pipe:
                 func(**inputs)
             return pipe
 
-        return wrapped_pipeline
-
-    if func is None:
-        return wrapper
-    else:
         return wrapped_pipeline

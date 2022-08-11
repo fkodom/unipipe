@@ -1,9 +1,9 @@
-import inspect
 import json
 import logging
 import os
 import tempfile
 import textwrap
+from inspect import getsource, isclass
 from typing import Any, Dict, Iterable, Optional, TypedDict
 
 from docker.errors import BuildError
@@ -18,6 +18,7 @@ IMPORTS = """
 import unipipe
 from unipipe import dsl
 from unipipe.dsl import *
+from unipipe.utils.ops import dispatch
 from typing import *
 """
 
@@ -34,8 +35,10 @@ parser = argparse.ArgumentParser()
 {arguments}
 args = parser.parse_args()
 
-func = {function_name}(**vars(args)).func
-output = func(**vars(args))
+output = {function_name}(**vars(args))
+if isinstance(output, dsl.Component):
+    output = output.func(**vars(args))
+
 with open('/app/output.json', "w") as f:
     json.dump(dict(output=output), f)
 """
@@ -43,7 +46,7 @@ with open('/app/output.json', "w") as f:
 
 def build_script(component: Component) -> str:
     _logging = LOGGING.format(logging_level=component.logging_level)
-    function = textwrap.dedent(inspect.getsource(component.func))
+    function = textwrap.dedent(getsource(component.func))
     annotations = get_annotations(component.func, eval_str=True)
     argument_lines = [
         f"parser.add_argument('--{k}', type={v.__name__})"
@@ -84,7 +87,7 @@ def build_docker_image(component: Component, tag: str):
         if accelerator is not None and accelerator.count:
             base_image = "fkodom/unipipe:latest-cuda"
         else:
-            base_image = "fodom/unipipe:latest"
+            base_image = "fkodom/unipipe:latest"
 
     logging.info(f"Building Docker image: ({tag=}, {base_image=})")
     client = docker.from_env()
@@ -195,7 +198,7 @@ class DockerExecutor(Executor):
         for _component in pipeline.components:
             _arguments = {k: resolve_value(v) for k, v in _component.inputs.items()}
             result = build_and_run(_component, arguments=_arguments)
-            return_type = get_annotations(_component.func, eval_str=True)["return"]
-            if issubclass(return_type, tuple):
+            return_type = get_annotations(_component.func, eval_str=True).get("return")
+            if isclass(return_type) and issubclass(return_type, tuple):
                 result = return_type(*result)
             arguments[_component.name] = result

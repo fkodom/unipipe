@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Dict, Optional
+from inspect import isclass
+from typing import Any, Dict, Optional, cast
 
 from unipipe.dsl import Component, LazyAttribute, Pipeline
 from unipipe.executor.base import Executor
@@ -29,7 +30,7 @@ class PythonExecutor(Executor):
         for _component in pipeline.components:
             _kwargs = {k: resolve_value(v) for k, v in _component.inputs.items()}
             result = _component.func(**_kwargs)
-            return_type = get_annotations(_component.func, eval_str=True)["return"]
-            if issubclass(return_type, tuple):
+            return_type = get_annotations(_component.func, eval_str=True).get("return")
+            if isclass(return_type) and issubclass(return_type, tuple):
                 result = return_type(*result)
             arguments[_component.name] = result
