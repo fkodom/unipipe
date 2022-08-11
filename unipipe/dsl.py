@@ -5,7 +5,7 @@ from contextlib import ExitStack
 from enum import Enum
 from functools import partial, wraps
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Callable, Dict, List, Optional, Union
 from uuid import uuid1
 
 from pydantic import BaseModel, parse_obj_as
@@ -55,23 +55,18 @@ class Hardware(BaseModel):
         allow_population_by_field_name: bool = True
 
 
-ALLOWED_OUTPUT_TYPES = (str, int, float, bool)
+class _Operable:
+    def __len__(self, other: Any) -> Component:
+        return dispatch_to_component(ops.len_, a=self, b=other)
 
+    def __str__(self, other: Any) -> Component:  # type: ignore
+        return dispatch_to_component(ops.str_, a=self, b=other)
 
-class Outputs(BaseModel):
-    def __init__(self, **data: Any) -> None:
-        for key, value in data.items():
-            if not isinstance(value, ALLOWED_OUTPUT_TYPES):
-                raise TypeError(
-                    f"Invalid {value=} for {key=}. Allowed types are "
-                    f"{ALLOWED_OUTPUT_TYPES}, but found {type(value)=}."
-                )
-        super().__init__(**data)
+    def __int__(self, other: Any) -> Component:  # type: ignore
+        return dispatch_to_component(ops.int_, a=self, b=other)
 
-
-class LazyAttribute(BaseModel):
-    parent: Any
-    key: str
+    def __float__(self, other: Any) -> Component:  # type: ignore
+        return dispatch_to_component(ops.float_, a=self, b=other)
 
     def __add__(self, other: Any) -> Component:
         return dispatch_to_component(ops.add, a=self, b=other)
@@ -79,8 +74,19 @@ class LazyAttribute(BaseModel):
     def __sub__(self, other: Any) -> Component:
         return dispatch_to_component(ops.sub, a=self, b=other)
 
+    def __mul__(self, other: Any) -> Component:
+        return dispatch_to_component(ops.mul, a=self, b=other)
+
+    def __div__(self, other: Any) -> Component:
+        return dispatch_to_component(ops.div, a=self, b=other)
+
     def __eq__(self, other: Any) -> Component:  # type: ignore
         return dispatch_to_component(ops.equal, a=self, b=other)
+
+
+class LazyAttribute(BaseModel, _Operable):  # type: ignore
+    parent: Any
+    key: str
 
 
 def wrap_logging_info(
@@ -98,7 +104,7 @@ def wrap_logging_info(
     return wrapped
 
 
-class Component:
+class Component(_Operable):
     def __init__(
         self,
         func: Callable,
@@ -145,7 +151,7 @@ class Component:
     def _return_type(self):
         return get_annotations(self.func, eval_str=True)["return"]
 
-    def __len__(self) -> int:
+    def _len(self) -> int:
         if issubclass(self._return_type, tuple):
             return len(self._return_type._fields)
 
@@ -155,16 +161,7 @@ class Component:
         )
 
     def __iter__(self):
-        return (self[i] for i in range(len(self)))
-
-    def __add__(self, other: Any) -> Component:
-        return dispatch_to_component(ops.add, a=self, b=other)
-
-    def __sub__(self, other: Any) -> Component:
-        return dispatch_to_component(ops.sub, a=self, b=other)
-
-    def __eq__(self, other: Any) -> Component:  # type: ignore
-        return dispatch_to_component(ops.equal, a=self, b=other)
+        return (self[i] for i in range(self._len()))
 
     def __getattr__(self, key: str) -> LazyAttribute:
         return LazyAttribute(parent=self, key=key)
@@ -235,7 +232,7 @@ class Pipeline(ExitStack):
     def __init__(
         self,
         name: Optional[str] = None,
-        components: Optional[List[Component]] = None,
+        components: Optional[List[Union[Component, Pipeline]]] = None,
     ) -> None:
         """
         Args:
@@ -250,6 +247,10 @@ class Pipeline(ExitStack):
         self.name = name.replace("_", "-")  # Cannot use _ in pipeline names
         self.components = components or []
         self.parent: Optional[Pipeline] = None
+
+        context = PipelineContext()
+        if context.current is not None:
+            context.current.components.append(self)
 
     def __enter__(self):
         context = PipelineContext()
@@ -267,8 +268,12 @@ class Pipeline(ExitStack):
         context.current = self.parent
         return super().__exit__(type, exc, traceback)
 
-    def __len__(self):
-        return len(self.components)
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self.name})"
+
+    # TODO: Extract return values/types from the underlying 'pipeline' function, and
+    # save them as a class property.  Will need those to make 'Pipeline' operable
+    # like 'Component' is, which is necessary for using nested pipelines.
 
 
 class PipelineContext:

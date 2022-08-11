@@ -84,19 +84,68 @@ def _infer_signature(inputs: Dict) -> Dict:
 
 # fmt: off
 
-# @dispatch
-# def _bool(a: str): return bool(str)
-# @dispatch
-# def _bool(a: int): return bool(int)
-# @dispatch
-# def _bool(a: float): return bool(float)
+
+@dispatch
+def len_(a: str) -> int: return len(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def len_(a: tuple) -> int: return len(a)  # noqa: E704, F811
+
+
+@dispatch
+def int_(a: str) -> int: return int(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def int_(a: int) -> int: return int(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def int_(a: float) -> int: return int(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def int_(a: bool) -> int: return int(a)  # noqa: E704, F811
+
+
+@dispatch
+def float_(a: str) -> float: return float(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def float_(a: int) -> float: return float(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def float_(a: float) -> float: return float(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def float_(a: bool) -> float: return float(a)  # noqa: E704, F811
+
+
+@dispatch
+def str_(a: str) -> str: return str(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def str_(a: int) -> str: return str(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def str_(a: float) -> str: return str(a)  # noqa: E704, F811
+@dispatch  # type: ignore
+def str_(a: bool) -> str: return str(a)  # noqa: E704, F811
+
+
+# TODO:
+#   - abs
+#   - round
+#   - ceil
+#   - floor
+#   - ge
+#   - gt
+#   - le
+#   - lt
+#   - ne
+#   - contains
+
 
 @dispatch
 def equal(a: str, b: str): return a == b  # noqa: E704, F811
 @dispatch  # type: ignore
-def equal(a: int, b: str): return a == b  # noqa: E704, F811
+def equal(a: int, b: int): return a == b  # noqa: E704, F811
 @dispatch  # type: ignore
-def equal(a: float, b: str): return a == b  # noqa: E704, F811
+def equal(a: int, b: float): return a == b  # noqa: E704, F811
+@dispatch  # type: ignore
+def equal(a: float, b: int): return a == b  # noqa: E704, F811
+@dispatch  # type: ignore
+def equal(a: float, b: float): return a == b  # noqa: E704, F811
+@dispatch  # type: ignore
+def equal(a: tuple, b: tuple): return a == b  # noqa: E704, F811
 
 
 @dispatch
@@ -139,5 +188,49 @@ def sub(a: bool, b: bool) -> bool: return a - b  # noqa: E704, F811
 def sub(a: bool, b: int) -> int: return a - b  # noqa: E704, F811
 @dispatch  # type: ignore
 def sub(a: bool, b: float) -> float: return a - b  # noqa: E704, F811
+
+
+@dispatch
+def mul(a: str, b: int) -> str: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: int, b: str) -> str: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: int, b: int) -> int: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: int, b: bool) -> int: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: int, b: float) -> float: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: float, b: int) -> float: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: float, b: bool) -> float: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: float, b: float) -> float: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: bool, b: bool) -> int: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: bool, b: int) -> int: return a * b  # noqa: E704, F811
+@dispatch  # type: ignore
+def mul(a: bool, b: float) -> float: return a * b  # noqa: E704, F811
+
+
+@dispatch
+def div(a: int, b: int) -> int: return a / b  # noqa: E704, F811
+@dispatch  # type: ignore
+def div(a: int, b: float) -> float: return a / b  # noqa: E704, F811
+@dispatch  # type: ignore
+def div(a: float, b: int) -> float: return a / b  # noqa: E704, F811
+@dispatch  # type: ignore
+def div(a: float, b: float) -> float: return a / b  # noqa: E704, F811
+
+
+@dispatch
+def floordiv(a: int, b: int) -> int: return a // b  # noqa: E704, F811
+@dispatch  # type: ignore
+def floordiv(a: int, b: float) -> float: return a // b  # noqa: E704, F811
+@dispatch  # type: ignore
+def floordiv(a: float, b: int) -> float: return a // b  # noqa: E704, F811
+@dispatch  # type: ignore
+def floordiv(a: float, b: float) -> float: return a // b  # noqa: E704, F811
 
 # fmt: on
