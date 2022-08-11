@@ -61,11 +61,6 @@ class KubeflowPipelinesBackend:
                 kfp_component = build_kubeflow_component(_component)
                 kwargs = {k: resolve_value(v) for k, v in _component.inputs.items()}
                 container_op = kfp_component(**kwargs)
-
-                # print(_component)
-                # print(kwargs)
-                # breakpoint()
-
                 set_hardware_attributes(container_op, _component)
 
                 try:
