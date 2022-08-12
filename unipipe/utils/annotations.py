@@ -5,7 +5,7 @@ import sys
 import types
 from collections import namedtuple
 from copy import deepcopy
-from typing import Callable
+from typing import Any, Callable, Dict, Type
 
 
 def get_annotations(obj, *, globals=None, locals=None, eval_str=False):  # noqa: C901
@@ -131,3 +131,19 @@ def resolve_annotations(obj: Callable) -> Callable:
     out = deepcopy(obj)
     setattr(out, "__annotations__", get_annotations(obj, eval_str=True))
     return out
+
+
+def infer_type(obj: Any) -> Type:
+    from unipipe.dsl import Component, LazyAttribute
+
+    if isinstance(obj, Component):
+        return get_annotations(obj.func, eval_str=True)["return"]
+    elif isinstance(obj, LazyAttribute):
+        parent_type = infer_type(obj.parent)
+        return get_annotations(parent_type, eval_str=True).get(obj.key)
+    else:
+        return type(obj)
+
+
+def infer_input_types(inputs: Dict) -> Dict:
+    return {k: infer_type(v) for k, v in inputs.items() if k != "return"}

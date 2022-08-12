@@ -5,7 +5,7 @@ from contextlib import ExitStack
 from enum import Enum
 from functools import partial, wraps
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 from uuid import uuid1
 
 from pydantic import BaseModel, parse_obj_as
@@ -55,6 +55,9 @@ class Hardware(BaseModel):
         allow_population_by_field_name: bool = True
 
 
+MINIMAL_HARDWARE = Hardware(cpus=1, memory="512M")
+
+
 class _Operable:
     def __len__(self, other: Any) -> Component:
         return dispatch_to_component(ops.len_, a=self, b=other)
@@ -87,6 +90,11 @@ class _Operable:
 class LazyAttribute(BaseModel, _Operable):  # type: ignore
     parent: Any
     key: str
+
+
+class LazyItem(BaseModel, _Operable):  # type: ignore
+    parent: Any
+    key: int
 
 
 def wrap_logging_info(
@@ -148,16 +156,16 @@ class Component(_Operable):
         return f"{self.__class__.__name__}(name={self.name})"
 
     @property
-    def _return_type(self):
+    def return_type(self):
         return get_annotations(self.func, eval_str=True)["return"]
 
     def _len(self) -> int:
-        if issubclass(self._return_type, tuple):
-            return len(self._return_type._fields)
+        if issubclass(self.return_type, tuple):
+            return len(self.return_type._fields)
 
         raise TypeError(
             "Only components with 'NamedTuple' return type have a defined length. "
-            f"Found return type {self._return_type}."
+            f"Found return type {self.return_type}."
         )
 
     def __iter__(self):
@@ -167,13 +175,13 @@ class Component(_Operable):
         return LazyAttribute(parent=self, key=key)
 
     def __getitem__(self, idx: int) -> LazyAttribute:
-        if issubclass(self._return_type, tuple):
-            key = self._return_type._fields[idx]
+        if issubclass(self.return_type, tuple):
+            key = self.return_type._fields[idx]
             return LazyAttribute(parent=self, key=key)
 
         raise TypeError(
             "Only components with 'NamedTuple' return type have '__getitem__' method. "
-            f"Found return type {self._return_type}."
+            f"Found return type {self.return_type}."
         )
 
 
@@ -215,12 +223,9 @@ def component(
         return wrapped_component
 
 
-DUNDER_HARDWARE = Hardware(cpus=1, memory="512M")
-
-
 def dispatch_to_component(dispatch: ops.MultipleDispatch, **kwargs) -> Component:
     func = dispatch[kwargs]
-    component_func = component(func=func, hardware=DUNDER_HARDWARE)
+    component_func = component(func=func, hardware=MINIMAL_HARDWARE)
     return component_func(**kwargs)
 
 
@@ -228,11 +233,13 @@ def dispatch_to_component(dispatch: ops.MultipleDispatch, **kwargs) -> Component
 #     pass
 
 
-class Pipeline(ExitStack):
+class Pipeline(ExitStack, _Operable):
     def __init__(
         self,
         name: Optional[str] = None,
         components: Optional[List[Union[Component, Pipeline]]] = None,
+        inputs: Optional[Dict] = None,
+        return_value: Optional[Any] = None,
     ) -> None:
         """
         Args:
@@ -246,6 +253,8 @@ class Pipeline(ExitStack):
 
         self.name = name.replace("_", "-")  # Cannot use _ in pipeline names
         self.components = components or []
+        self.inputs = inputs or {}
+        self.return_value = return_value
         self.parent: Optional[Pipeline] = None
 
         context = PipelineContext()
@@ -271,9 +280,30 @@ class Pipeline(ExitStack):
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(name={self.name})"
 
-    # TODO: Extract return values/types from the underlying 'pipeline' function, and
-    # save them as a class property.  Will need those to make 'Pipeline' operable
-    # like 'Component' is, which is necessary for using nested pipelines.
+    @property
+    def return_type(self) -> Type:
+        return type(self.return_value)
+
+    def _len(self) -> int:
+        if issubclass(self.return_type, (tuple, list, dict)):
+            assert self.return_value is not None
+            return len(self.return_value)
+
+        raise TypeError(
+            f"Length of {self.return_value=} is not defined at runtime (not determined "
+            "until execution time). Pipelines with return types (tuple, list, dict) "
+            "are defined at runtime, though, and can be indexed/iterated like normal "
+            "Python container objects."
+        )
+
+    def __iter__(self):
+        return (self[i] for i in range(self._len()))
+
+    def __getitem__(self, idx: int) -> LazyItem:
+        return LazyItem(parent=self.return_value, idx=idx)
+
+    def __getattr__(self, key: str) -> LazyAttribute:
+        return LazyAttribute(parent=self, key=key)
 
 
 class PipelineContext:
@@ -295,7 +325,8 @@ def pipeline(
         def wrapper(func: Callable) -> Callable:
             def wrapped_pipeline(**inputs):
                 with Pipeline(name=name, **kwargs) as pipe:
-                    func(**inputs)
+                    return_value = func(**inputs)
+                    pipe.return_value = return_value
                 return pipe
 
             return wrapped_pipeline
@@ -305,7 +336,8 @@ def pipeline(
 
         def wrapped_pipeline(**inputs):
             with Pipeline(name=name, **kwargs) as pipe:
-                func(**inputs)
+                return_value = func(**inputs)
+                pipe.return_value = return_value
             return pipe
 
         return wrapped_pipeline

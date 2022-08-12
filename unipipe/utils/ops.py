@@ -1,7 +1,7 @@
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Callable, Dict, List, Optional
 
-from unipipe.utils.annotations import get_annotations
+from unipipe.utils.annotations import get_annotations, infer_input_types
 
 
 class MultipleDispatch:
@@ -19,14 +19,12 @@ class MultipleDispatch:
         self.signatures.append(signature)
 
     def __getitem__(self, inputs):
-        signature = _infer_signature(inputs)
+        signature = infer_input_types(inputs)
         for func, _signature in zip(self.funcs, self.signatures):
             if not len(signature) == len(_signature):
                 continue
             elif all(issubclass(v, _signature[k]) for k, v in signature.items()):
                 return func
-        print(self.signatures)
-        print(signature)
         return None
 
     def __call__(self, **inputs):
@@ -64,22 +62,6 @@ def component_dispatch(**kwargs):
         return comp
 
     return wrapper
-
-
-def _infer_type(obj: Any) -> Type:
-    from unipipe.dsl import Component, LazyAttribute
-
-    if isinstance(obj, Component):
-        return get_annotations(obj.func, eval_str=True)["return"]
-    elif isinstance(obj, LazyAttribute):
-        parent_type = _infer_type(obj.parent)
-        return get_annotations(parent_type, eval_str=True).get(obj.key)
-    else:
-        return type(obj)
-
-
-def _infer_signature(inputs: Dict) -> Dict:
-    return {k: _infer_type(v) for k, v in inputs.items() if k != "return"}
 
 
 # fmt: off
