@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import logging
-from contextlib import ExitStack
+from contextlib import ExitStack, contextmanager
 from enum import Enum
 from functools import partial, wraps
 from types import TracebackType
@@ -59,17 +59,17 @@ MINIMAL_HARDWARE = Hardware(cpus=1, memory="512M")
 
 
 class _Operable:
-    def __len__(self, other: Any) -> Component:
-        return dispatch_to_component(ops.len_, a=self, b=other)
+    def __len__(self) -> Component:
+        return dispatch_to_component(ops.len_, a=self)
 
-    def __str__(self, other: Any) -> Component:  # type: ignore
-        return dispatch_to_component(ops.str_, a=self, b=other)
+    def __str__(self) -> Component:  # type: ignore
+        return dispatch_to_component(ops.str_, a=self)
 
-    def __int__(self, other: Any) -> Component:  # type: ignore
-        return dispatch_to_component(ops.int_, a=self, b=other)
+    def __int__(self) -> Component:  # type: ignore
+        return dispatch_to_component(ops.int_, a=self)
 
-    def __float__(self, other: Any) -> Component:  # type: ignore
-        return dispatch_to_component(ops.float_, a=self, b=other)
+    def __float__(self) -> Component:  # type: ignore
+        return dispatch_to_component(ops.float_, a=self)
 
     def __add__(self, other: Any) -> Component:
         return dispatch_to_component(ops.add, a=self, b=other)
@@ -229,10 +229,6 @@ def dispatch_to_component(dispatch: ops.MultipleDispatch, **kwargs) -> Component
     return component_func(**kwargs)
 
 
-# class Condition(ExitStack):
-#     pass
-
-
 class Pipeline(ExitStack, _Operable):
     def __init__(
         self,
@@ -341,3 +337,41 @@ def pipeline(
             return pipe
 
         return wrapped_pipeline
+
+
+class Condition(BaseModel):
+    operand1: Any
+    operand2: Any
+    comparator: Callable
+
+
+class ConditionalPipeline(Pipeline):
+    def __init__(
+        self,
+        condition: Condition,
+        name: Optional[str] = None,
+        components: Optional[List[Union[Component, Pipeline]]] = None,
+        inputs: Optional[Dict] = None,
+        return_value: Optional[Any] = None,
+    ) -> None:
+        super().__init__(name, components, inputs, return_value)
+        self.condition = condition
+
+    # def __enter__(self):
+    #     breakpoint()
+    #     pass
+
+
+@contextmanager
+def condition(operand1: Any, operand2: Any, comparator: Callable[[Any, Any], bool]):
+    _condition = Condition(operand1=operand1, operand2=operand2, comparator=comparator)
+    pipeline = ConditionalPipeline(condition=_condition)
+    try:
+        with pipeline:
+            yield pipeline
+    finally:
+        pass
+
+
+equal = partial(condition, comparator=lambda o1, o2: o1 == o2)
+not_equal = partial(condition, comparator=lambda o1, o2: o1 == o2)

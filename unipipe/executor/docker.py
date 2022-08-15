@@ -3,7 +3,6 @@ import logging
 import os
 import tempfile
 import textwrap
-from copy import deepcopy
 from inspect import getsource, isclass
 from typing import Any, Dict, Iterable, Optional, TypedDict
 
@@ -11,8 +10,8 @@ from docker.errors import BuildError
 from docker.types import DeviceRequest
 
 import docker
-from unipipe.dsl import Component, LazyAttribute, Pipeline
-from unipipe.executor.base import Executor
+from unipipe.dsl import Component, ConditionalPipeline, LazyAttribute, Pipeline
+from unipipe.executor.base import LocalExecutor
 from unipipe.utils.annotations import get_annotations
 
 IMPORTS = """
@@ -193,23 +192,38 @@ def resolve_value(arguments: Dict, value: Any) -> Any:
         return value
 
 
-class DockerExecutor(Executor):
-    def run(self, pipeline: Pipeline, arguments: Optional[Dict], **kwargs):
-        if arguments is None:
-            arguments = deepcopy(pipeline.inputs)
+class DockerExecutor(LocalExecutor):
+    def resolve_local_value(self, _locals: Dict, value: Any) -> Any:
+        if isinstance(value, LazyAttribute):
+            return getattr(resolve_value(_locals, value.parent), value.key)
+        elif isinstance(value, Pipeline):
+            if value.name in _locals:
+                return _locals[value.name]
+            return resolve_value(_locals, value.return_value)
+        elif isinstance(value, (tuple, list)):
+            return tuple(resolve_value(_locals, x) for x in value)
+        elif isinstance(value, Component):
+            assert isinstance(_locals, dict)
+            return _locals[value.name]
+        else:
+            return value
 
-        for comp in pipeline.components:
-            _kwargs = {k: resolve_value(arguments, v) for k, v in comp.inputs.items()}
-            if isinstance(comp, Pipeline):
-                result = self.run(comp, arguments=_kwargs)
-            else:
-                _arguments = {
-                    k: resolve_value(arguments, v) for k, v in comp.inputs.items()
-                }
-                result = build_and_run(comp, arguments=_arguments)
-                return_type = get_annotations(comp.func, eval_str=True).get("return")
-                if isclass(return_type) and issubclass(return_type, tuple):
-                    result = return_type(*result)
-            arguments[comp.name] = result
+    def run_component(self, component: Component, **kwargs):
+        result = build_and_run(component, kwargs)
+        return_type = get_annotations(component.func, eval_str=True).get("return")
+        if isclass(return_type) and issubclass(return_type, tuple):
+            result = return_type(*result)
 
-        return resolve_value(arguments, pipeline.return_value)
+        return result
+
+    def run_conditional_pipeline_with_locals(
+        self, pipeline: ConditionalPipeline, _locals: Dict[str, Any]
+    ):
+        operand1 = self.resolve_local_value(_locals, pipeline.condition.operand1)
+        operand2 = self.resolve_local_value(_locals, pipeline.condition.operand2)
+        comparator = pipeline.condition.comparator
+
+        if comparator(operand1, operand2):
+            return self.run_pipeline_with_locals(pipeline, _locals=_locals)
+        else:
+            return None, _locals

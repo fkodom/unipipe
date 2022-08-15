@@ -71,6 +71,9 @@ from unipipe.executor.base import Executor
 
 
 class VertexExecutor(Executor):
+    def resolve_local_value(self, _locals: Dict, value: Any) -> Any:
+        return None
+
     def run(
         self,
         pipeline: Any,

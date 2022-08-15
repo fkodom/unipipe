@@ -25,6 +25,8 @@ class MultipleDispatch:
                 continue
             elif all(issubclass(v, _signature[k]) for k, v in signature.items()):
                 return func
+
+        breakpoint()
         return None
 
     def __call__(self, **inputs):
@@ -214,5 +216,9 @@ def floordiv(a: int, b: float) -> float: return a // b  # noqa: E704, F811
 def floordiv(a: float, b: int) -> float: return a // b  # noqa: E704, F811
 @dispatch  # type: ignore
 def floordiv(a: float, b: float) -> float: return a // b  # noqa: E704, F811
+
+
+@dispatch
+def contains(a: str, b: str) -> bool: return a.__contains__(b)  # noqa: E704, F811
 
 # fmt: on
