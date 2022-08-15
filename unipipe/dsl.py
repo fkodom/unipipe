@@ -286,10 +286,10 @@ class Pipeline(ExitStack, _Operable):
             return len(self.return_value)
 
         raise TypeError(
-            f"Length of {self.return_value=} is not defined at runtime (not determined "
-            "until execution time). Pipelines with return types (tuple, list, dict) "
-            "are defined at runtime, though, and can be indexed/iterated like normal "
-            "Python container objects."
+            f"Length of 'return_value={self.return_value}' is not defined at runtime "
+            "(not determined until execution time). Pipelines with return types "
+            "(tuple, list, dict) are defined at runtime, though, and can be "
+            "indexed/iterated like normal Python container objects."
         )
 
     def __iter__(self):
@@ -356,10 +356,6 @@ class ConditionalPipeline(Pipeline):
     ) -> None:
         super().__init__(name, components, inputs, return_value)
         self.condition = condition
-
-    # def __enter__(self):
-    #     breakpoint()
-    #     pass
 
 
 @contextmanager

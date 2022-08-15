@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, Dict, Tuple
 
 from unipipe.dsl import Component, ConditionalPipeline, Pipeline
 
@@ -57,4 +57,7 @@ class LocalExecutor(Executor):
         return return_value, _locals
 
     def run(self, pipeline: Pipeline, **kwargs):
-        return self.run_pipeline_with_locals(pipeline, _locals=pipeline.inputs)
+        return_value, _ = self.run_pipeline_with_locals(
+            pipeline, _locals=pipeline.inputs
+        )
+        return return_value

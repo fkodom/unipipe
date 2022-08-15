@@ -89,7 +89,7 @@ def build_docker_image(component: Component, tag: str):
         else:
             base_image = "fkodom/unipipe:latest"
 
-    logging.info(f"Building Docker image: ({tag=}, {base_image=})")
+    logging.info(f"Building Docker image: ('tag={tag}', 'base_image={base_image}')")
     client = docker.from_env()
     dockerfile = DOCKERFILE.format(
         base_image=base_image,
