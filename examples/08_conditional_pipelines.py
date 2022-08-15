@@ -30,17 +30,29 @@ def stark_house_motto() -> str:
 def pipeline():
     tyrion, lannister = split_name(name="Tyrion Lannister")
     hello(first_name=tyrion, last_name=lannister)
-    # This conditional pipeline should return the Lannister house motto.
-    with dsl.equal(lannister, "Lannister"):
-        lannister_house_motto()
 
     ned, stark = split_name(name="Ned Stark")
     hello(first_name=ned, last_name=stark)
-    # This won't do anything, because 'not_lannister' evaluates to False.
+
+    # This should execute the Lannister house motto.
+    with dsl.equal(lannister, "Lannister"):
+        lannister_house_motto()
+
+    # This won't do anything, because "Stark" != "Lannister".
     with dsl.equal(stark, "Lannister"):
         lannister_house_motto()
-    # This conditional pipeline should return the Stark house motto.
+
+    # This should execute the Stark house motto.
     with dsl.not_equal(stark, "Stark"):
+        stark_house_motto()
+
+    # NOTE: You can also create a custom condition by providing the function used to
+    # compare the two arguments.
+    #
+    # Be warned -- KFP isn't very flexible in what functions are allowed here.
+    # It's safeest to stick with built-in operators like [==, !=, >, <, >=, <=, ...].
+    # The condition below evaluates to True, so the Stark motto is executed again.
+    with dsl.condition(stark, "S", lambda x, y: x >= y):
         stark_house_motto()
 
 

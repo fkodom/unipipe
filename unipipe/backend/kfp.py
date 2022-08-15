@@ -72,6 +72,18 @@ def build_pipeline_with_locals(pipeline: Pipeline, _locals: Dict[str, Any]):
             operand2 = resolve_value(_locals, component.condition.operand2)
             comparator = component.condition.comparator
 
+            # An unfortunate fact about KFP conditions -- they require two operands,
+            # and as a result, they don't deal well with raw boolean input values.
+            # As a workaround, you can cast the boolean values to strings and compare.
+            #
+            # Basically, this allows 'unipipe' users to write things like:
+            #   with dsl.equal(evaluates_to_true, True):
+            #       do_something()
+            if isinstance(operand1, bool):
+                operand1 = str(operand1).lower()
+            if isinstance(operand2, bool):
+                operand2 = str(operand2).lower()
+
             with kfp_dsl.Condition(comparator(operand1, operand2)):
                 result, _locals = build_pipeline_with_locals(
                     component, _locals=__locals
