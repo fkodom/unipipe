@@ -8,7 +8,7 @@ from unipipe.dsl import Component, ConditionalPipeline, Pipeline
 
 class Executor:
     @abstractmethod
-    def run(self, pipeline: Pipeline, **kwargs):
+    def run(self, pipeline: Pipeline):
         pass
 
 
@@ -56,7 +56,7 @@ class LocalExecutor(Executor):
         return_value = self.resolve_local_value(_locals, pipeline.return_value)
         return return_value, _locals
 
-    def run(self, pipeline: Pipeline, **kwargs):
+    def run(self, pipeline: Pipeline):
         return_value, _ = self.run_pipeline_with_locals(
             pipeline, _locals=pipeline.inputs
         )

@@ -74,9 +74,6 @@ from unipipe.executor.base import Executor
 
 
 class VertexExecutor(Executor):
-    def resolve_local_value(self, _locals: Dict, value: Any) -> Any:
-        return None
-
     def run(
         self,
         pipeline: Any,
@@ -86,7 +83,6 @@ class VertexExecutor(Executor):
         credentials: Optional[Credentials] = None,
         project: str = None,
         location: str = "us-central1",
-        **kwargs,
     ):
         if isinstance(pipeline, Pipeline):
             pipeline = KubeflowPipelinesBackend().build(pipeline)

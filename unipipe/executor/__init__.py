@@ -22,11 +22,10 @@ EXECUTOR_IMPORTS: Dict[str, ExecutorImport] = {
 def run(
     executor: Union[str, Executor],
     pipeline: Pipeline,
-    arguments: Optional[Dict] = None,
     **kwargs,
 ):
     if isinstance(executor, str):
         _import = EXECUTOR_IMPORTS[executor]
         executor = getattr(import_module(_import.module), _import.name)()
         assert isinstance(executor, Executor)
-    return executor.run(pipeline, arguments=arguments, **kwargs)
+    return executor.run(pipeline, **kwargs)
