@@ -80,7 +80,21 @@ Expected output:
 INFO:root:[say_hello-1603ae3e] - Hello, world!
 ```
 
-More examples and tutorials available in [examples/](./examples/).
+
+## More Examples
+
+Link | Description
+-----|------------
+[Hello World](./examples/01_hello_world.py) | Create/run your first `unipipe` pipeline
+[Hello Pipeline](./examples/02_hello_pipeline.py) | Create pipelines with multiple steps
+[Multi-output Components](./examples/03_multi_output_components.py) | Build components that return more than one type-checked value
+[Pipeline Arguments](./examples/04_pipeline_arguments.py) | Make pipelines reusable with dynamic inputs
+[Dependency Management](./examples/05_dependency_management.py) | Install and use other Python packages in your pipelines
+[Hardware Specs](./examples/06_hardware_specs.py) | Request hardware (CPUs, Memory, GPUs) for your pipeline runs
+[Nested Pipelines](./examples/07_nested_pipelines.py) | Call existing pipelines from inside another pipeline
+[Conditional Pipelines](./examples/07_nested_pipelines.py) | Add conditional control flow to your pipelines
+
+
 
 
 ## Why `unipipe`?
