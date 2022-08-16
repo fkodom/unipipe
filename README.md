@@ -95,8 +95,6 @@ Link | Description
 [Conditional Pipelines](./examples/07_nested_pipelines.py) | Add conditional control flow to your pipelines
 
 
-
-
 ## Why `unipipe`?
 
 1. **`unipipe` was designed to mitigate issues with Kubeflow Pipelines (KFP).**

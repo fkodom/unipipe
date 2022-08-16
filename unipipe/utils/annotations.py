@@ -3,8 +3,6 @@ from __future__ import annotations
 import functools
 import sys
 import types
-from collections import namedtuple
-from copy import deepcopy
 from typing import Any, Callable, Dict, Type
 
 
@@ -128,9 +126,16 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):  # noqa:
 
 
 def resolve_annotations(obj: Callable) -> Callable:
-    out = deepcopy(obj)
-    setattr(out, "__annotations__", get_annotations(obj, eval_str=True))
-    return out
+    """Returns an identical Callable object, but with all stringified type annotations
+    resolved to Type objects.
+
+    NOTE: KFP requires us to de-stringify type annotations before compiling
+    components/pipelines.  It's also helpful for other backends/executors, since
+    we no longer have to worry about de-stringify annotations each type we
+    perform a type check.
+    """
+    setattr(obj, "__annotations__", get_annotations(obj, eval_str=True))
+    return obj
 
 
 def infer_type(obj: Any) -> Type:
