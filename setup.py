@@ -38,7 +38,7 @@ setup(
     description="project_description",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    install_requires=["pydantic"],
+    install_requires=["pydantic", "typing_extensions"],
     extras_require=extras_require,
     classifiers=[
         "Programming Language :: Python :: 3",

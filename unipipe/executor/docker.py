@@ -1,10 +1,11 @@
 import json
 import logging
 import os
+import sys
 import tempfile
 import textwrap
 from inspect import getsource, isclass
-from typing import Any, Dict, Iterable, Optional, TypedDict
+from typing import Any, Dict, Iterable, Optional, Union
 
 from docker.errors import BuildError
 from docker.types import DeviceRequest
@@ -13,6 +14,12 @@ import docker
 from unipipe.dsl import Component, ConditionalPipeline, LazyAttribute, Pipeline
 from unipipe.executor.base import LocalExecutor
 from unipipe.utils.annotations import get_annotations
+
+if sys.version_info >= (3, 8):
+    from typing import TypedDict  # pylint: disable=no-name-in-module
+else:
+    from typing_extensions import TypedDict
+
 
 IMPORTS = """
 import unipipe
@@ -120,7 +127,7 @@ class Volume(TypedDict):
 def build_and_run(
     component: Component,
     arguments: Optional[Dict[str, Any]] = None,
-    volumes: Optional[Dict[str, Volume]] = None,
+    volumes: Optional[Dict[str, Union[str, Volume]]] = None,
     remove: bool = True,
 ):
     client = docker.from_env()
