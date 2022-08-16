@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from unipipe.utils.annotations import get_annotations, infer_input_types
 
@@ -18,7 +18,7 @@ class MultipleDispatch:
         self.funcs.append(func)
         self.signatures.append(signature)
 
-    def __getitem__(self, inputs):
+    def __getitem__(self, inputs: Dict[str, Any]):
         signature = infer_input_types(inputs)
         for func, _signature in zip(self.funcs, self.signatures):
             if not len(signature) == len(_signature):
@@ -44,32 +44,19 @@ class DispatchRegistry:
             cls.instance = super().__new__(cls)
         return cls.instance
 
+    def __getitem__(self, name: str) -> MultipleDispatch:
+        return self.d[name]
+
     def __call__(self, func: Callable, signature: Optional[Dict] = None):
         name = func.__qualname__
-        self.d[name].add(func, signature=signature)
+        self[name].add(func, signature=signature)
         return self.d[name]
 
 
 dispatch = DispatchRegistry()
 
 
-def component_dispatch(**kwargs):
-    from unipipe.dsl import Hardware, component
-
-    if "hardware" not in kwargs:
-        kwargs["hardware"] = Hardware(cpus=1, memory="512M")
-
-    def wrapper(func: Callable):
-        comp = component(func, **kwargs)
-        signature = get_annotations(func, eval_str=True)
-        dispatch(comp, signature=signature)
-        return comp
-
-    return wrapper
-
-
 # fmt: off
-
 
 @dispatch
 def len_(a: str) -> int: return len(a)  # noqa: E704, F811
