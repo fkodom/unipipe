@@ -12,7 +12,7 @@ jobs:
 
     strategy:
       matrix:
-        python: ["3.8", "3.9", "3.10"]
+        python: ["3.7", "3.8", "3.9", "3.10"]
 
     steps:
       - name: Checkout
@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Package
         run: |
-          pip install -e .[test]
+          pip install -e .[all]
 
       - name: Test
         run: |
@@ -33,4 +33,4 @@ jobs:
           isort --diff .
           flake8 .
           pytest --cov --cov-report term-missing --cov-fail-under 80 tests/
-          mypy .
+          mypy unipipe/

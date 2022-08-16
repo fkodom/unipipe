@@ -12,6 +12,9 @@ from unipipe.backend.kfp import KubeflowPipelinesBackend
 from unipipe.dsl import Pipeline
 from unipipe.executor.base import Executor
 
+# from google.auth import default
+# from google.cloud.storage import Client as StorageClient
+
 # class PipelineState(str, Enum):
 #     """
 #     Enum for possible pipeline states.
@@ -81,12 +84,19 @@ class VertexExecutor(Executor):
         pipeline_root: Optional[str] = None,
         enable_caching: bool = False,
         credentials: Optional[Credentials] = None,
-        project: Optional[str] = "sense-staging",
-        location: Optional[str] = "us-central1",
+        project: str = None,
+        location: str = "us-central1",
         **kwargs,
     ):
         if isinstance(pipeline, Pipeline):
             pipeline = KubeflowPipelinesBackend().build(pipeline)
+
+        # StorageClient()
+        # default_credentials, default_project = default()
+        # if not credentials:
+        #     credentials = default_credentials
+        # if not project:
+        #     project = default_project
 
         with TemporaryDirectory() as tempdir:
             template_path = os.path.join(tempdir, "pipeline.json")

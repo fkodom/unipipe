@@ -193,7 +193,7 @@ def component(
     packages_to_install: Optional[List[str]] = None,
     hardware: Optional[Hardware] = None,
     **kwargs,
-) -> Callable[..., Component]:
+) -> Callable:
     new_component = partial(
         Component,
         name=name,
@@ -206,9 +206,9 @@ def component(
 
     if func is None:
 
-        def wrapper(func: Callable) -> Callable:
+        def wrapper(func: Callable) -> Callable[..., Component]:
             @wraps(func)
-            def wrapped_component(**inputs):
+            def wrapped_component(**inputs) -> Component:
                 return new_component(func=func, inputs=inputs)
 
             return wrapped_component
@@ -217,7 +217,7 @@ def component(
     else:
 
         @wraps(func)
-        def wrapped_component(**inputs):
+        def wrapped_component(**inputs) -> Component:
             return new_component(func=func, inputs=inputs)
 
         return wrapped_component
