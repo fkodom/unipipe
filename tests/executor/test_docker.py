@@ -1,3 +1,5 @@
+import pytest
+
 import unipipe
 from examples.ex01_hello_world import pipeline as pipeline_01
 from examples.ex02_hello_pipeline import pipeline as pipeline_02
@@ -9,34 +11,42 @@ from examples.ex07_nested_pipelines import pipeline as pipeline_07
 from examples.ex08_conditional_pipelines import pipeline as pipeline_08
 
 
+@pytest.mark.slow
 def test_example_01():
-    unipipe.run(pipeline=pipeline_01(), executor="python")
+    unipipe.run(pipeline=pipeline_01(), executor="docker")
 
 
+@pytest.mark.slow
 def test_example_02():
-    unipipe.run(pipeline=pipeline_02(), executor="python")
+    unipipe.run(pipeline=pipeline_02(), executor="docker")
 
 
+@pytest.mark.slow
 def test_example_03():
-    unipipe.run(pipeline=pipeline_03(), executor="python")
+    unipipe.run(pipeline=pipeline_03(), executor="docker")
 
 
+@pytest.mark.slow
 def test_example_04():
-    unipipe.run(pipeline=pipeline_04(name="Tyrion Lannister"), executor="python")
+    unipipe.run(pipeline=pipeline_04(name="Tyrion Lannister"), executor="docker")
 
 
+@pytest.mark.slow
 def test_example_05():
-    unipipe.run(pipeline=pipeline_05(name="Tyrion Lannister"), executor="python")
+    unipipe.run(pipeline=pipeline_05(name="Tyrion Lannister"), executor="docker")
 
 
+@pytest.mark.slow
 def test_example_06():
     image_url = "https://raw.githubusercontent.com/EliSchwartz/imagenet-sample-images/master/n01443537_goldfish.JPEG"
-    unipipe.run(pipeline=pipeline_06(image_url=image_url), executor="python")
+    unipipe.run(pipeline=pipeline_06(image_url=image_url), executor="docker")
 
 
+@pytest.mark.slow
 def test_example_07():
-    unipipe.run(pipeline=pipeline_07(), executor="python")
+    unipipe.run(pipeline=pipeline_07(), executor="docker")
 
 
+@pytest.mark.slow
 def test_example_08():
-    unipipe.run(pipeline=pipeline_08(), executor="python")
+    unipipe.run(pipeline=pipeline_08(), executor="docker")

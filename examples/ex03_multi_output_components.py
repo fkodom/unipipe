@@ -39,7 +39,9 @@ def pipeline():
     # Example accessing each result by its field name:
     lord_stark = split_name(name="Ned Stark")
     hello(first_name=lord_stark.first, last_name=lord_stark.last)
-    house_motto(last_name=lord_stark.last)
+    motto = house_motto(last_name=lord_stark.last)
+
+    return motto
 
 
 if __name__ == "__main__":
