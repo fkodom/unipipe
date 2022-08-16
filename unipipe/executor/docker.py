@@ -89,19 +89,13 @@ def _record_build_logs(logs: Iterable[Dict[str, str]], level: int):
 
 def build_docker_image(component: Component, tag: str):
     base_image = component.base_image
-    if base_image is None:
-        accelerator = component.hardware.accelerator
-        if accelerator is not None and accelerator.count:
-            base_image = "fkodom/unipipe:latest-cuda"
-        else:
-            base_image = "fkodom/unipipe:latest"
-
     logging.info(f"Building Docker image: ('tag={tag}', 'base_image={base_image}')")
     client = docker.from_env()
     dockerfile = DOCKERFILE.format(
         base_image=base_image,
         packages=" ".join(component.packages_to_install or ["pip"]),
     )
+
     with tempfile.TemporaryDirectory() as tempdir:
         dockerfile_path = os.path.join(tempdir, "Dockerfile")
         with open(dockerfile_path, "w") as f:

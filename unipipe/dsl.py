@@ -13,18 +13,6 @@ from pydantic import BaseModel, parse_obj_as
 from unipipe.utils import ops
 from unipipe.utils.annotations import get_annotations
 
-__all__ = [
-    "AcceleratorType",
-    # "Artifact",
-    "Component",
-    "Hardware",
-    # "Input",
-    # "Output",
-    "Pipeline",
-    "component",
-    "pipeline",
-]
-
 
 class AcceleratorType(str, Enum):
     T4 = "nvidia-tesla-t4"
@@ -35,7 +23,7 @@ class AcceleratorType(str, Enum):
 
 
 class Accelerator(BaseModel):
-    count: Optional[str] = None
+    count: Optional[int] = None
     type: Optional[AcceleratorType] = None
 
     class Config:
@@ -55,6 +43,8 @@ class Hardware(BaseModel):
         allow_population_by_field_name: bool = True
 
 
+# TODO: Check that this is configured correctly. Vertex jobs still appear to use
+# the 'e2-highmem-2' VM type.
 MINIMAL_HARDWARE = Hardware(cpus=1, memory="512M")
 
 
@@ -94,7 +84,7 @@ class LazyAttribute(BaseModel, _Operable):  # type: ignore
 
 class LazyItem(BaseModel, _Operable):  # type: ignore
     parent: Any
-    key: int
+    idx: int
 
 
 def wrap_logging_info(
@@ -112,6 +102,14 @@ def wrap_logging_info(
     return wrapped
 
 
+def _base_image_for_hardware(hardware: Hardware) -> str:
+    accelerator = hardware.accelerator
+    if accelerator is not None and accelerator.count:
+        return "fkodom/unipipe:latest-cuda"
+    else:
+        return "fkodom/unipipe:latest"
+
+
 class Component(_Operable):
     def __init__(
         self,
@@ -122,8 +120,7 @@ class Component(_Operable):
         # Not used by the local executor
         base_image: Optional[str] = None,
         packages_to_install: Optional[List[str]] = None,
-        hardware: Optional[Hardware] = None,
-        **kwargs,
+        hardware: Optional[Union[Dict, Hardware]] = None,
     ) -> None:
         """
         Args:
@@ -143,17 +140,13 @@ class Component(_Operable):
         )
         self.inputs = inputs
         self.logging_level = logging_level
-        self.base_image = base_image
         self.packages_to_install = packages_to_install
         self.hardware = parse_obj_as(Hardware, hardware) if hardware else Hardware()
-        self.kwargs = kwargs
+        self.base_image = base_image or _base_image_for_hardware(self.hardware)
 
         pipeline = PipelineContext().current
         if pipeline is not None:
             pipeline.components.append(self)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name})"
 
     @property
     def return_type(self):
@@ -191,8 +184,7 @@ def component(
     logging_level: Optional[int] = None,
     base_image: Optional[str] = None,
     packages_to_install: Optional[List[str]] = None,
-    hardware: Optional[Hardware] = None,
-    **kwargs,
+    hardware: Optional[Union[Dict, Hardware]] = None,
 ) -> Callable:
     new_component = partial(
         Component,
@@ -201,7 +193,6 @@ def component(
         base_image=base_image,
         packages_to_install=packages_to_install,
         hardware=hardware,
-        **kwargs,
     )
 
     if func is None:
@@ -272,9 +263,6 @@ class Pipeline(ExitStack, _Operable):
         context = PipelineContext()
         context.current = self.parent
         return super().__exit__(type, exc, traceback)
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}(name={self.name})"
 
     @property
     def return_type(self) -> Type:

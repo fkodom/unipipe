@@ -26,8 +26,10 @@ class MultipleDispatch:
             elif all(issubclass(v, _signature[k]) for k, v in signature.items()):
                 return func
 
-        breakpoint()
-        return None
+        raise TypeError(
+            f"Could not find a function with 'signature={signature}'. Available "
+            f"signatures include: [{self.signatures}]."
+        )
 
     def __call__(self, **inputs):
         func = self[inputs]

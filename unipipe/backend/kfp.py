@@ -29,7 +29,8 @@ def set_hardware_attributes(container_op: Any, component: Component):
     if hardware.accelerator:
         accelerator = hardware.accelerator
         if accelerator.count:
-            container_op.set_gpu_limit(accelerator.count)
+            # KFP requires the count to be given as a string
+            container_op.set_gpu_limit(str(accelerator.count))
         if accelerator.type:
             container_op.add_node_selector_constraint(
                 "cloud.google.com/gke-accelerator",
