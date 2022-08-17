@@ -22,6 +22,7 @@ extras_require = {
     "docker": ["docker"],
     "vertex": ["kfp", "google-cloud-aiplatform", "google-cloud-storage"],
     "test": [
+        "arrow",
         "black",
         "flake8",
         "isort",
