@@ -5,13 +5,15 @@ from contextlib import ExitStack, contextmanager
 from enum import Enum
 from functools import partial, wraps
 from types import TracebackType
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
 from uuid import uuid1
 
 from pydantic import BaseModel, parse_obj_as
 
 from unipipe.utils import ops
-from unipipe.utils.annotations import get_annotations
+from unipipe.utils.annotations import get_annotations, infer_type
+
+T_co = TypeVar("T_co", covariant=True)
 
 
 class AcceleratorType(str, Enum):
@@ -110,7 +112,7 @@ def _base_image_for_hardware(hardware: Hardware) -> str:
         return "fkodom/unipipe:latest"
 
 
-class Component(_Operable):
+class Component(_Operable, Generic[T_co]):
     def __init__(
         self,
         func: Callable,
@@ -220,7 +222,7 @@ def dispatch_to_component(dispatch: ops.MultipleDispatch, **kwargs) -> Component
     return component_func(**kwargs)
 
 
-class Pipeline(ExitStack, _Operable):
+class Pipeline(ExitStack, _Operable, Generic[T_co]):
     def __init__(
         self,
         name: Optional[str] = None,
@@ -307,7 +309,7 @@ def pipeline(
     if func is None:
 
         def wrapper(func: Callable) -> Callable:
-            def wrapped_pipeline(**inputs):
+            def wrapped_pipeline(**inputs) -> Pipeline:
                 with Pipeline(name=name, **kwargs) as pipe:
                     return_value = func(**inputs)
                     pipe.return_value = return_value
@@ -318,7 +320,8 @@ def pipeline(
         return wrapper
     else:
 
-        def wrapped_pipeline(**inputs):
+        def wrapped_pipeline(**inputs) -> Pipeline:
+            assert func is not None
             with Pipeline(name=name, **kwargs) as pipe:
                 return_value = func(**inputs)
                 pipe.return_value = return_value

@@ -42,8 +42,6 @@ if __name__ == "__main__":
         executor=args.executor,
         # Pass arguments into the decorated pipeline, as with any Python function.
         pipeline=pipeline(name=args.name),
-        project="frank-odom",
-        pipeline_root="gs://frank-odom/experiments/",
     )
 
     # Tested using '--name="Tyrion Lannister"'

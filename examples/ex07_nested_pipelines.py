@@ -1,5 +1,5 @@
 import argparse
-from typing import NamedTuple
+from typing import NamedTuple, Union
 
 import unipipe
 from unipipe import dsl
@@ -43,17 +43,21 @@ def pipeline():
 
 
 @dsl.pipeline
-def other_pipeline(name: str) -> str:
+def other_pipeline(name: Union[str, dsl.Component[str]]) -> dsl.Component[str]:
+    # Use the type annotation 'dsl.Component[<type>]' where appropriate to keep
+    # 'mypy' from complaining at us.
+    #
+    # In this case, 'other_pipeline' can accept either a raw string, or a Component
+    # that will evaluate to a string value. The pipeline returns a Component object,
+    # which will eventually evaluate to a string.
+    #
+    # NOTE: Unlike with Components, these type annotations are not checked or enforced
+    # by 'unipipe'.  They're just for better book keeping and readability.
     lord_stark = split_name(name=name)
     hello(first_name=lord_stark.first, last_name=lord_stark.last)
     motto = house_motto(last_name=lord_stark.last)
 
-    # Mypy doesn't like this return value -- it's annotated as 'str', but if you
-    # inspect the 'motto' variable, it's actually a 'Component' object. It needs to
-    # be a 'Component', since 'motto' is part of a 'Pipeline' that won't be executed
-    # until later. There may be a future workaround for these linting annoyances, but
-    # for now just ignore them.  ¯\_(ツ)_/¯
-    return motto  # type: ignore
+    return motto
 
 
 if __name__ == "__main__":
@@ -64,8 +68,6 @@ if __name__ == "__main__":
     unipipe.run(
         executor=args.executor,
         pipeline=pipeline(),
-        project="frank-odom",
-        pipeline_root="gs://frank-odom/experiments/",
     )
 
     # Expected output:

@@ -64,8 +64,6 @@ if __name__ == "__main__":
     unipipe.run(
         executor=args.executor,
         pipeline=pipeline(),
-        project="frank-odom",
-        pipeline_root="gs://frank-odom/experiments/",
     )
 
     # Expected output:

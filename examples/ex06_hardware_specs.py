@@ -66,8 +66,8 @@ def image_classification(image_url: str) -> int:
 
 
 @dsl.pipeline
-def pipeline(image_url: str):
-    image_classification(image_url=image_url)
+def pipeline(image_url: str) -> dsl.Component[int]:
+    return image_classification(image_url=image_url)
 
 
 if __name__ == "__main__":
@@ -80,8 +80,6 @@ if __name__ == "__main__":
         executor=args.executor,
         # Pass arguments into the decorated pipeline, as with any Python function.
         pipeline=pipeline(image_url=args.image_url),
-        project="frank-odom",
-        pipeline_root="gs://frank-odom/experiments/",
     )
 
     # Tested using this example image of a goldfish:
