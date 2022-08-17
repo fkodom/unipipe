@@ -92,7 +92,7 @@ Link | Description
 [Dependency Management](./examples/ex05_dependency_management.py) | Install and use other Python packages in your pipelines
 [Hardware Specs](./examples/ex06_hardware_specs.py) | Request hardware (CPUs, Memory, GPUs) for your pipeline runs
 [Nested Pipelines](./examples/ex07_nested_pipelines.py) | Call existing pipelines from inside another pipeline
-[Conditional Pipelines](./examples/ex08_conditional_pipelines.py) | Add conditional control flow to your pipelines
+[Control Flow](./examples/ex08_control_flow.py.py) | Add conditional control flow to your pipelines
 
 
 ## Why `unipipe`?

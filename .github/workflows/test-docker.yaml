@@ -2,7 +2,8 @@ name: Test
 
 on:
   workflow_dispatch: {}
-  push: {}
+  pull_request:
+    - opened
 
 jobs:
   test:
@@ -26,11 +27,12 @@ jobs:
       - name: Install Package
         run: |
           pip install -e .[all]
+          pip install torch
 
       - name: Test
         run: |
           black --check .
           isort --diff .
           flake8 .
-          pytest --cov --cov-report term-missing --cov-fail-under 80 tests/
+          pytest --docker tests/
           mypy unipipe/

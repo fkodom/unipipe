@@ -6,7 +6,7 @@ from examples.ex04_pipeline_arguments import pipeline as pipeline_04
 from examples.ex05_dependency_management import pipeline as pipeline_05
 from examples.ex06_hardware_specs import pipeline as pipeline_06
 from examples.ex07_nested_pipelines import pipeline as pipeline_07
-from examples.ex08_conditional_pipelines import pipeline as pipeline_08
+from examples.ex08_control_flow import pipeline as pipeline_08
 
 
 def test_example_01():

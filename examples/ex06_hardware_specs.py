@@ -44,19 +44,18 @@ def image_classification(image_url: str) -> int:
     from torchvision.models import efficientnet_b0
     from torchvision.transforms.functional import to_tensor
 
-    # Check that CUDA is available in this component/job.
-    cuda_available = torch.cuda.is_available()
-    logging.info(f"CUDA available: {cuda_available}")
-    assert cuda_available
+    # Get the CUDA device, if available
+    device = "cuda:0" if torch.cuda.is_available() else "cpu"
+    logging.info(f"Using device: {device}")
 
     # Download the image, convert to a Tensor, add 'batch' dimension, and push to GPU.
     image_bytes = requests.get(image_url).content
     image = Image.open(io.BytesIO(image_bytes))
-    tensor = to_tensor(image).unsqueeze(0).cuda()
+    tensor = to_tensor(image).unsqueeze(0).to(device)
 
     # Load the classification model, set to 'eval' mode, and push to the GPU.
     model = efficientnet_b0(pretrained=True)
-    model.eval().cuda()
+    model.eval().to(device)
 
     # Classify the image, and return the predicted image class (integer).
     with torch.no_grad():
