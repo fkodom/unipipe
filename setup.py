@@ -32,7 +32,7 @@ extras_require = {
         "torchvision",
     ],
 }
-extras_require["dev"] = ["pre-commit", "ipywidgets", *extras_require["test-docker"]]
+extras_require["dev"] = ["pre-commit", "ipywidgets", *extras_require["test"]]
 all_require = [r for reqs in extras_require.values() for r in reqs]
 extras_require["all"] = all_require
 
