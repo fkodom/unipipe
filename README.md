@@ -4,7 +4,7 @@
 
 Build batch pipelines in Python that run anywhere -- on your laptop, on the server, and in the cloud.  
 
-:warning: Experimental (pre-alpha) :warning:
+:warning: Experimental :warning:
 
 <p align="center">
     <img src="./doc/img/pipe.png" height=256 width=256/>
