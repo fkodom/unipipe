@@ -26,13 +26,19 @@ In addition to accelerators, 'Hardware' has the follow inputs/properties:
 @dsl.component(
     packages_to_install=["requests", "torch", "torchvision"],
     hardware=dsl.Hardware(
+        cpus=4,
+        memory="16G",
         accelerator=dsl.Accelerator(
             count=1,
             type=dsl.AcceleratorType.T4,
-        )
+        ),
     ),
     # Equivalently, hardware can be a dictionary.  Example:
-    #   hardware={"accelerator": {"count": 1, type="nvidia-tesla-t4"}}
+    #   hardware={
+    #       "cpus": 4,
+    #       "memory": "16G",
+    #       "accelerator": {"count": 1, type="nvidia-tesla-t4"},
+    #   }
 )
 def image_classification(image_url: str) -> int:
     import io
