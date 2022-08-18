@@ -102,7 +102,7 @@ def build_docker_image(component: Component, tag: str):
             f.write(dockerfile)
         try:
             _, logs = client.images.build(
-                path="./", dockerfile=dockerfile_path, tag=tag, rm=True
+                path="./", dockerfile=dockerfile_path, tag=tag, pull=True, rm=True
             )
             level = logging.DEBUG
         except BuildError as e:
