@@ -1,0 +1,83 @@
+name: Build Release
+
+on:
+  workflow_dispatch: {}
+  release:
+    types:
+      - created
+
+env:
+  PYTHON_VERSION: 3.9
+
+jobs:
+  pypi:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+
+      - name: Build Package
+        env:
+          UNIPIPE_VERSION: ${{ github.event.release.tag_name }}
+        run: python -m build
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_API_TOKEN }}
+
+  docker-cpu:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          file: docker/cpu.Dockerfile
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/unipipe:latest
+            ${{ secrets.DOCKERHUB_USERNAME }}/unipipe:${{ github.event.release.tag_name }}
+          push: true
+          no-cache: true
+
+  docker-cuda:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and Push
+        id: docker_build
+        uses: docker/build-push-action@v2
+        with:
+          file: docker/cuda.Dockerfile
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/unipipe:latest-cuda
+            ${{ secrets.DOCKERHUB_USERNAME }}/unipipe:${{ github.event.release.tag_name }}-cuda
+          push: true
+          no-cache: true
