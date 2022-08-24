@@ -26,17 +26,17 @@ def stark_house_motto() -> str:
     return "Winter is coming..."
 
 
-@dsl.pipeline(name="main-pipeline")
+@dsl.pipeline
 def pipeline():
     tyrion, lannister = split_name(name="Tyrion Lannister")
     hello(first_name=tyrion, last_name=lannister)
 
-    ned, stark = split_name(name="Ned Stark")
-    hello(first_name=ned, last_name=stark)
-
     # This should execute the Lannister house motto.
     with dsl.equal(lannister, "Lannister"):
         lannister_house_motto()
+
+    ned, stark = split_name(name="Ned Stark")
+    hello(first_name=ned, last_name=stark)
 
     # This won't do anything, because "Stark" != "Lannister".
     with dsl.equal(stark, "Lannister"):
