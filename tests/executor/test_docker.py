@@ -10,6 +10,8 @@ from examples.ex05_dependency_management import pipeline as pipeline_05
 from examples.ex06_hardware_specs import pipeline as pipeline_06
 from examples.ex07_nested_pipelines import pipeline as pipeline_07
 from examples.ex08_control_flow import pipeline as pipeline_08
+from examples.ex09_advanced_control_flow import bad_pipeline as bad_pipeline_09
+from examples.ex09_advanced_control_flow import good_pipeline as pipeline_09
 
 
 @pytest.mark.docker
@@ -52,3 +54,11 @@ def test_example_07():
 @pytest.mark.docker
 def test_example_08():
     unipipe.run(pipeline=pipeline_08(), executor="docker")
+
+
+@pytest.mark.docker
+def test_example_09():
+    with pytest.raises(KeyError):
+        unipipe.run(pipeline=bad_pipeline_09(name="Ned Stark"), executor="docker")
+    unipipe.run(pipeline=bad_pipeline_09(name="Tyrion Lannister"), executor="docker")
+    unipipe.run(pipeline=pipeline_09(name="Ned Stark"), executor="docker")

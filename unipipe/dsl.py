@@ -361,4 +361,4 @@ def condition(operand1: Any, operand2: Any, comparator: Callable[[Any, Any], boo
 
 
 equal = partial(condition, comparator=lambda o1, o2: o1 == o2)
-not_equal = partial(condition, comparator=lambda o1, o2: o1 == o2)
+not_equal = partial(condition, comparator=lambda o1, o2: o1 != o2)
