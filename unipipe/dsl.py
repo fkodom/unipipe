@@ -11,7 +11,7 @@ from uuid import uuid1
 from pydantic import BaseModel, parse_obj_as
 
 from unipipe.utils import ops
-from unipipe.utils.annotations import get_annotations, infer_type
+from unipipe.utils.annotations import get_annotations, wrap_cast_output_type
 
 T_co = TypeVar("T_co", covariant=True)
 
@@ -45,8 +45,11 @@ class Hardware(BaseModel):
         allow_population_by_field_name: bool = True
 
 
-# TODO: Check that this is configured correctly. Vertex jobs still appear to use
-# the 'e2-highmem-2' VM type.
+# TODO: Open an issue with google about the minimum allowable hardware. Even though
+# custom jobs allow the 'e2-standard-1' machine type, apparently Vertex Pipelines
+# will only allocate 'e2-highmem-2' as the smallest machine type.
+#
+# Not a huge deal, but will cost you a few cents here and there for small jobs.
 MINIMAL_HARDWARE = Hardware(cpus=1, memory="512M")
 
 
@@ -137,8 +140,11 @@ class Component(_Operable, Generic[T_co]):
 
         self.name = name.replace("_", "-")
         logging_level = logging_level or logging.INFO
+        self.return_type = get_annotations(func, eval_str=True)["return"]
         self.func = wrap_logging_info(
-            func, component_name=name, logging_level=logging_level
+            wrap_cast_output_type(func, _type=self.return_type),
+            component_name=name,
+            logging_level=logging_level,
         )
         self.inputs = inputs
         self.logging_level = logging_level
@@ -149,10 +155,6 @@ class Component(_Operable, Generic[T_co]):
         pipeline = PipelineContext().current
         if pipeline is not None:
             pipeline.components.append(self)
-
-    @property
-    def return_type(self):
-        return get_annotations(self.func, eval_str=True)["return"]
 
     def _len(self) -> int:
         if issubclass(self.return_type, tuple):

@@ -3,7 +3,8 @@ from __future__ import annotations
 import functools
 import sys
 import types
-from typing import Any, Callable, Dict, Type
+from inspect import isclass
+from typing import Any, Callable, Dict, Type, TypeVar
 
 
 def get_annotations(obj, *, globals=None, locals=None, eval_str=False):  # noqa: C901
@@ -154,3 +155,27 @@ def infer_type(obj: Any) -> Type:
 
 def infer_input_types(inputs: Dict) -> Dict:
     return {k: infer_type(v) for k, v in inputs.items() if k != "return"}
+
+
+_T = TypeVar("_T", str, float, int, bool, tuple)
+
+
+def cast_output_type(output: Any, _type: Type[_T]) -> _T:
+    if isclass(_type) and issubclass(_type, tuple):
+        annotations = get_annotations(_type, eval_str=True)
+        _kwargs = {
+            k: cast_output_type(v, annotations[k])
+            for k, v in zip(_type._fields, output)  # type: ignore
+        }
+        return _type(**_kwargs)  # type: ignore
+
+    return _type(output)
+
+
+def wrap_cast_output_type(func: Callable, _type: Type[_T]) -> Callable[..., _T]:
+    @functools.wraps(func)
+    def wrapped(*args, **kwargs) -> _T:
+        result = func(*args, **kwargs)
+        return cast_output_type(result, _type)
+
+    return wrapped
