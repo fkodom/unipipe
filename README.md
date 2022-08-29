@@ -5,7 +5,8 @@
 :warning: Experimental :warning:
 
 * Build batch pipelines in Python that run anywhere -- on your laptop, on the server, and in the cloud.
-* Save time by easily scaling local experiments to the cloud
+* Easily scale local experiments to the cloud without any changes
+* Save time by only writing each pipeline once
 * Save money by only paying for the compute infrastructure you need
 
 
@@ -95,7 +96,8 @@ Link | Description
 [Dependency Management](./examples/ex05_dependency_management.py) | Install and use other Python packages in your pipelines
 [Hardware Specs](./examples/ex06_hardware_specs.py) | Request hardware (CPUs, Memory, GPUs) for your pipeline runs
 [Nested Pipelines](./examples/ex07_nested_pipelines.py) | Call existing pipelines from inside another pipeline
-[Control Flow](./examples/ex08_control_flow.py.py) | Add conditional control flow to your pipelines
+[Control Flow](./examples/ex08_control_flow.py) | Add conditional control flow to your pipelines
+[Advanced Control Flow](./examples/ex09_advanced_control_flow.py) | Best practices for advanced control flow
 
 
 ## Why `unipipe`?
@@ -112,9 +114,8 @@ Link | Description
 
 ## TODO
 
-`unipipe` is still in pre-alpha development, so there are lots of things to do. :sweat_smile:  I won't list everything here -- just some of the larger, long-term goals.
+`unipipe` is still in early development, so there are lots of things to do. :sweat_smile:  I won't list everything here -- just some of the larger, long-term goals.
 
 1. Add executor for KFP clusters, in addition to Vertex.
 2. Better up-front type checking (i.e. before running the pipeline).
-3. More unit tests, more test coverage
-4. Apache Beam backend and executor (???)
+3. Apache Beam backend and executor (???)
