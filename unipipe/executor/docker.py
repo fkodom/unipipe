@@ -5,7 +5,8 @@ import sys
 import tempfile
 import textwrap
 from inspect import getsource, isclass
-from typing import Any, Dict, Iterable, Optional, Union
+from itertools import dropwhile
+from typing import Any, Callable, Dict, Iterable, Optional, Union
 
 from docker.errors import BuildError
 from docker.types import DeviceRequest
@@ -51,9 +52,28 @@ with open('/app/output.json', "w") as f:
 """
 
 
+def _get_component_func_source(func: Callable) -> str:
+    """Largely copy-pasta from 'kfp.v2'.  De-indents the function source code, and
+    removes any decorators or other code preceding the 'def' statement.  Then,
+    decorate the function with just '@dsl.component', so we can utilize type
+    checking/casting, logging, etc. from the Component class.
+    """
+    # Function may be defined in another function/class. Dedent the source code.
+    lines = textwrap.dedent(getsource(func)).split("\n")
+    lines = list(dropwhile(lambda x: not x.startswith("def"), lines))
+
+    if not lines:
+        raise ValueError(
+            'Failed to dedent and clean up the source of function "{}". '
+            "It is probably not properly indented.".format(func.__name__)
+        )
+
+    return "\n".join(["@dsl.component", *lines])
+
+
 def build_script(component: Component) -> str:
     _logging = LOGGING.format(logging_level=component.logging_level)
-    function = textwrap.dedent(getsource(component.func))
+    function = _get_component_func_source(component.func)
     annotations = get_annotations(component.func, eval_str=True)
     argument_lines = [
         f"parser.add_argument('--{k}', type={v.__name__})"
@@ -91,10 +111,18 @@ def build_docker_image(component: Component, tag: str):
     base_image = component.base_image
     logging.info(f"Building Docker image: ('tag={tag}', 'base_image={base_image}')")
     client = docker.from_env()
-    dockerfile = DOCKERFILE.format(
-        base_image=base_image,
-        packages=" ".join(component.packages_to_install or ["pip"]),
-    )
+
+    # If no packages listed, just include 'pip' as a placeholder
+    install_options = component.packages_to_install or ["pip"]
+    if component.pip_index_urls:
+        index_url, *extra_index_urls = component.pip_index_urls
+        install_options.append(f"--index-url {index_url} --trusted-host {index_url}")
+        install_options.extend(
+            [f"--extra-index-url {i} --trusted-host {i}" for i in extra_index_urls]
+        )
+
+    packages = " ".join(install_options)
+    dockerfile = DOCKERFILE.format(base_image=base_image, packages=packages)
 
     with tempfile.TemporaryDirectory() as tempdir:
         dockerfile_path = os.path.join(tempdir, "Dockerfile")
