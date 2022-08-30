@@ -149,15 +149,20 @@ class Volume(TypedDict):
 def build_and_run(
     component: Component,
     arguments: Optional[Dict[str, Any]] = None,
-    volumes: Optional[Dict[str, Union[str, Volume]]] = None,
+    volumes: Optional[Dict[str, Union[Dict, Volume]]] = None,
     remove: bool = True,
 ):
     client = docker.from_env()
     tag = build_docker_image(component, tag=component.name)
     if arguments is None:
         arguments = {}
+
     if volumes is None:
         volumes = {}
+
+    config_path = os.path.expanduser("~/.config/")
+    if os.path.exists(config_path) and config_path not in volumes:
+        volumes[config_path] = {"bind": "/root/.config/", "mode": "ro"}
 
     with tempfile.TemporaryDirectory() as tempdir:
         script_path = os.path.join(tempdir, "main.py")
