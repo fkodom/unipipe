@@ -57,7 +57,6 @@ def resolve_value(_locals: Dict, value: Any) -> Any:
 
 
 def run_component(component: Component, **kwargs):
-    result = component.func(**kwargs)
     kfp_component = build_kubeflow_component(component)
     result = kfp_component(**kwargs)
     set_hardware_attributes(result, component)
