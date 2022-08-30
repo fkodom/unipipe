@@ -5,7 +5,18 @@ from contextlib import ExitStack, contextmanager
 from enum import Enum
 from functools import partial, wraps
 from types import TracebackType
-from typing import Any, Callable, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 from uuid import uuid1
 
 from pydantic import BaseModel, parse_obj_as
@@ -115,6 +126,18 @@ def _base_image_for_hardware(hardware: Hardware) -> str:
         return "fkodom/unipipe:latest"
 
 
+def get_pip_index_urls(urls: Optional[Sequence[str]]) -> Optional[List[str]]:
+    if urls is None:
+        return None
+
+    PYPI_URL = "https://pypi.org/simple"
+    result = [url for url in urls]
+    if PYPI_URL not in result:
+        result.append(PYPI_URL)
+
+    return result
+
+
 class Component(_Operable, Generic[T_co]):
     def __init__(
         self,
@@ -125,6 +148,7 @@ class Component(_Operable, Generic[T_co]):
         # Not used by the local executor
         base_image: Optional[str] = None,
         packages_to_install: Optional[List[str]] = None,
+        pip_index_urls: Optional[List[str]] = None,
         hardware: Optional[Union[Dict, Hardware]] = None,
     ) -> None:
         """
@@ -149,6 +173,7 @@ class Component(_Operable, Generic[T_co]):
         self.inputs = inputs
         self.logging_level = logging_level
         self.packages_to_install = packages_to_install
+        self.pip_index_urls = get_pip_index_urls(pip_index_urls)
         self.hardware = parse_obj_as(Hardware, hardware) if hardware else Hardware()
         self.base_image = base_image or _base_image_for_hardware(self.hardware)
 
@@ -188,6 +213,7 @@ def component(
     logging_level: Optional[int] = None,
     base_image: Optional[str] = None,
     packages_to_install: Optional[List[str]] = None,
+    pip_index_urls: Optional[List[str]] = None,
     hardware: Optional[Union[Dict, Hardware]] = None,
 ) -> Callable:
     new_component = partial(
@@ -196,6 +222,7 @@ def component(
         logging_level=logging_level,
         base_image=base_image,
         packages_to_install=packages_to_install,
+        pip_index_urls=pip_index_urls,
         hardware=hardware,
     )
 

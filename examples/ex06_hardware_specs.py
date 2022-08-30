@@ -1,8 +1,3 @@
-import argparse
-
-import unipipe
-from unipipe import dsl
-
 """
 An example of using GPUs to accelerate pipeline components.  To do that, we
 include the 'hardware' keyword in our decorator, and specify what type/count of
@@ -21,6 +16,11 @@ In addition to accelerators, 'Hardware' has the follow inputs/properties:
             count (str | int | None) - Number of accelerators
             type (str | None) - Name/type of the accelerator
 """
+
+import argparse
+
+import unipipe
+from unipipe import dsl
 
 
 @dsl.component(

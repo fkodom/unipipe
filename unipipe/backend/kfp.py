@@ -15,6 +15,7 @@ def build_kubeflow_component(component: Component):
         func=resolve_annotations(component.func),
         base_image=component.base_image or "fkodom/unipipe:latest",
         packages_to_install=component.packages_to_install,
+        pip_index_urls=component.pip_index_urls,
     )
     comp.name = component.name
     return comp

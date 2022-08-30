@@ -98,6 +98,7 @@ Link | Description
 [Nested Pipelines](./examples/ex07_nested_pipelines.py) | Call existing pipelines from inside another pipeline
 [Control Flow](./examples/ex08_control_flow.py) | Add conditional control flow to your pipelines
 [Advanced Control Flow](./examples/ex09_advanced_control_flow.py) | Best practices for advanced control flow
+[Private Dependencies](./examples/ex10_private_dependencies.py) | Using private Python packages
 
 
 ## Why `unipipe`?
