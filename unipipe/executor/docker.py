@@ -23,11 +23,12 @@ else:
 
 
 IMPORTS = """
+from typing import *
+
 import unipipe
 from unipipe import dsl
 from unipipe.dsl import *
 from unipipe.utils.ops import dispatch
-from typing import *
 """
 
 LOGGING = """
