@@ -161,15 +161,18 @@ _T = TypeVar("_T", str, float, int, bool, tuple)
 
 
 def cast_output_type(output: Any, _type: Type[_T]) -> _T:
-    if isclass(_type) and issubclass(_type, tuple):
+    if _type is None:
+        assert output is None
+        return output
+    elif isclass(_type) and issubclass(_type, tuple):
         annotations = get_annotations(_type, eval_str=True)
         _kwargs = {
             k: cast_output_type(v, annotations[k])
             for k, v in zip(_type._fields, output)  # type: ignore
         }
         return _type(**_kwargs)  # type: ignore
-
-    return _type(output)
+    else:
+        return _type(output)
 
 
 def wrap_cast_output_type(func: Callable, _type: Type[_T]) -> Callable[..., _T]:
