@@ -70,11 +70,11 @@ from unipipe import dsl
 from unipipe.dsl import *
 
 
-def {function_name}(argv: List[str]) -> None:
+def {function_name}(args: List[str]) -> None:
     import argparse
     import sys
 
-    sys.argv = ["{function_name}.py", *argv]
+    sys.argv = ["{function_name}.py", *args]
 
     {script_code}
 """
@@ -107,15 +107,15 @@ def component_from_script(path: str, **kwargs) -> Callable[..., dsl.Component]:
     return dsl.component(func=func, **merged_kwargs)
 
 
-def run_script(path: str, argv: List[str], executor: str = "python"):
+def run_script(path: str, args: List[str], executor: str = "python"):
     component_fn = component_from_script(path=path)
 
     @dsl.pipeline
     def pipeline():
-        component_fn(argv=argv)
+        component_fn(args=args)
 
     unipipe.run(executor=executor, pipeline=pipeline())
 
 
 if __name__ == "__main__":
-    run_script(path="./temp_script.py", argv=["--hello", "world"])
+    run_script(path="examples/ex11_using_scripts.py", args=["--hello", "world"])
