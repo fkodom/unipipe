@@ -6,7 +6,7 @@ import os
 import sys
 import tempfile
 from itertools import dropwhile
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Callable, Dict, Optional, Sequence
 
 import unipipe
 from unipipe import dsl
@@ -84,7 +84,7 @@ from unipipe import dsl
 from unipipe.dsl import *
 
 
-def {function_name}(args: List[str]) -> None:
+def {function_name}(args: Tuple[str]) -> None:
     import argparse
     import sys
 
@@ -121,15 +121,15 @@ def component_from_script(path: str, **kwargs) -> Callable[..., dsl.Component]:
     return dsl.component(func=func, **merged_kwargs)
 
 
-def run_script(path: str, args: List[str], executor: str = "python"):
+def run_script(path: str, args: Sequence[str] = (), executor: str = "python"):
     component_fn = component_from_script(path=path)
+    # Component functions expect a 'List' object. For technical reasons, it's much
+    # easier to type-check a strict 'List' annotation than 'Sequence', but we want
+    # the 'run_script' method to be as user-friendly as possible.
+    args = tuple(args)
 
     @dsl.pipeline
     def pipeline():
-        component_fn(args=args)
+        component_fn(args)
 
     unipipe.run(executor=executor, pipeline=pipeline())
-
-
-if __name__ == "__main__":
-    run_script(path="examples/ex11_using_scripts.py", args=["--hello", "world"])

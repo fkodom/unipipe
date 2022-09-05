@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 import unipipe
@@ -11,6 +13,7 @@ from examples.ex07_nested_pipelines import pipeline as pipeline_07
 from examples.ex08_control_flow import pipeline as pipeline_08
 from examples.ex09_advanced_control_flow import bad_pipeline as bad_pipeline_09
 from examples.ex09_advanced_control_flow import good_pipeline as pipeline_09
+from unipipe.utils.scripts import run_script
 
 
 def test_example_01():
@@ -51,3 +54,16 @@ def test_example_09():
         unipipe.run(pipeline=bad_pipeline_09(name="Ned Stark"), executor="python")
     unipipe.run(pipeline=bad_pipeline_09(name="Tyrion Lannister"), executor="python")
     unipipe.run(pipeline=pipeline_09(name="Ned Stark"), executor="python")
+
+
+def test_example_11():
+    with pytest.raises(KeyError):
+        run_script("./examples/ex11_using_scripts.py", args=["--hello", "world"])
+
+    os.environ["PYPI_USERNAME"] = "user"
+    os.environ["PYPI_PASSWORD"] = "pass"
+    run_script("./examples/ex11_using_scripts.py", args=["--hello", "world"])
+
+    with pytest.raises(SystemExit):
+        # 'argparse' tries to exit the program, since required CLI args are not given.
+        run_script("./examples/ex11_using_scripts.py")

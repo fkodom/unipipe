@@ -15,7 +15,10 @@ The block below will be parsed as Python code.
 
 @dsl.component(
     hardware=dsl.Hardware(cpus=2, memory='1G'),
-    packages_to_install=['my-secret-package'],
+    packages_to_install=[
+        # Commented out, so tests will pass for this dummy example :)
+        # 'my-secret-package'
+    ],
     pip_index_urls=[
         'https://{PYPI_USERNAME}:{PYPI_PASSWORD}@my-private-pypi.org/simple',
     ],

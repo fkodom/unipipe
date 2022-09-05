@@ -64,3 +64,6 @@ def test_example_08():
 
 def test_example_09():
     _test_build_kfp_pipeline(pipeline_09(name="Ned Stark"))
+
+
+# TODO: Add test for building KFP pipeline from 'unipipe.utils.scripts' methods.
