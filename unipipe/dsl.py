@@ -4,6 +4,7 @@ import logging
 from contextlib import ExitStack, contextmanager
 from enum import Enum
 from functools import partial, wraps
+from inspect import signature
 from types import TracebackType
 from typing import (
     Any,
@@ -207,6 +208,19 @@ class Component(_Operable, Generic[T_co]):
         )
 
 
+def _process_component_args(func: Callable, *args, **kwargs):
+    sig = signature(func)
+    pos_inputs = {k: a for k, a in zip(sig.parameters.keys(), args)}
+    for key in pos_inputs.keys():
+        if key in kwargs.keys():
+            raise ValueError(
+                f"Function '{func.__name__}' received two values for arg '{key}'."
+            )
+
+    component_inputs = {**pos_inputs, **kwargs}
+    return component_inputs
+
+
 def component(
     func: Optional[Callable] = None,
     name: Optional[str] = None,
@@ -230,7 +244,8 @@ def component(
 
         def wrapper(func: Callable) -> Callable[..., Component]:
             @wraps(func)
-            def wrapped_component(**inputs) -> Component:
+            def wrapped_component(*args, **kwargs) -> Component:
+                inputs = _process_component_args(func, *args, **kwargs)
                 return new_component(func=func, inputs=inputs)
 
             return wrapped_component
@@ -239,7 +254,9 @@ def component(
     else:
 
         @wraps(func)
-        def wrapped_component(**inputs) -> Component:
+        def wrapped_component(*args, **kwargs) -> Component:
+            assert func is not None
+            inputs = _process_component_args(func, *args, **kwargs)
             return new_component(func=func, inputs=inputs)
 
         return wrapped_component

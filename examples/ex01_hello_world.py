@@ -11,7 +11,7 @@ def hello(name: str) -> str:
 
 @dsl.pipeline
 def pipeline():
-    hello(name="world")
+    hello("world")
 
 
 if __name__ == "__main__":
