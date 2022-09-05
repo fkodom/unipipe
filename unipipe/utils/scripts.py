@@ -12,6 +12,18 @@ import unipipe
 from unipipe import dsl
 
 
+def _removeprefix(string: str, prefix: str) -> str:
+    if string.startswith(prefix):
+        string = string[len(prefix) :]
+    return string
+
+
+def _removesuffix(string: str, suffix: str) -> str:
+    if string.endswith(suffix):
+        string = string[: -len(suffix)]
+    return string
+
+
 def get_docstring_from_script(path: str) -> Optional[str]:
     with open(path, "r") as f:
         tree = ast.parse(f.read())
@@ -19,7 +31,9 @@ def get_docstring_from_script(path: str) -> Optional[str]:
 
 
 def parse_component_kwargs_from_string(decorator: str):
-    decorator = decorator.lstrip("@").lstrip("dsl.").lstrip("component")
+    decorator = _removeprefix(decorator, "@")
+    decorator = _removeprefix(decorator, "dsl.")
+    decorator = _removeprefix(decorator, "component")
     decorator = decorator.format(**os.environ)
     return eval(f"dict{decorator}")
 
@@ -81,7 +95,7 @@ def {function_name}(args: List[str]) -> None:
 
 
 def function_from_script(script_path: str) -> Callable:
-    name = os.path.basename(script_path).removesuffix(".py")
+    name = _removesuffix(os.path.basename(script_path), ".py")
     with open(script_path, "r") as f:
         script_lines = f.readlines()
     indent = " " * 4
@@ -95,7 +109,7 @@ def function_from_script(script_path: str) -> Callable:
 
     module_path, file_name = os.path.split(fp.name)
     sys.path.append(module_path)
-    module = importlib.import_module(file_name.removesuffix(".py"))
+    module = importlib.import_module(_removesuffix(file_name, ".py"))
 
     return getattr(module, name)
 
