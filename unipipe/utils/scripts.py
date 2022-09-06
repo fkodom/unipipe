@@ -84,7 +84,7 @@ from unipipe import dsl
 from unipipe.dsl import *
 
 
-def {function_name}(args: Tuple[str]) -> None:
+def {function_name}(args: List[str]) -> None:
     import argparse
     import sys
 
@@ -121,14 +121,20 @@ def component_from_script(path: str, **kwargs) -> Callable[..., dsl.Component]:
     return dsl.component(func=func, **merged_kwargs)
 
 
-def run_script(path: str, args: Sequence[str] = (), executor: str = "python", **kwargs):
+def run_script(
+    path: str,
+    args: Sequence[str] = (),
+    executor: str = "python",
+    name: Optional[str] = None,
+    **kwargs,
+):
     component_fn = component_from_script(path=path, **kwargs)
     # Component functions expect a 'List' object. For technical reasons, it's much
     # easier to type-check a strict 'List' annotation than 'Sequence', but we want
     # the 'run_script' method to be as user-friendly as possible.
-    args = tuple(args)
+    args = list(args)
 
-    @dsl.pipeline
+    @dsl.pipeline(name=name)
     def pipeline():
         component_fn(args)
 

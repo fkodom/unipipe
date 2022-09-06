@@ -1,4 +1,5 @@
 import os
+from unittest import mock
 
 import pytest
 import torch
@@ -69,6 +70,8 @@ def test_example_09():
 
 @pytest.mark.docker
 def test_example_11():
+    # This will fail, because it doesn't have any PyPI credentials as ENV variables.
+    # It should raise 'KeyError' as it tries to fetch those from 'os.environ'.
     with pytest.raises(KeyError):
         run_script(
             "./examples/ex11_using_scripts.py",
@@ -76,14 +79,15 @@ def test_example_11():
             executor="docker",
         )
 
-    os.environ["PYPI_USERNAME"] = "user"
-    os.environ["PYPI_PASSWORD"] = "pass"
-    run_script(
-        "./examples/ex11_using_scripts.py",
-        args=["--hello", "world"],
-        executor="docker",
-    )
+    # Set mock values, so we can run the script without affecting other tests.
+    mock_pypi_credentials = {"PYPI_USERNAME": "user", "PYPI_PASSWORD": "pass"}
+    with mock.patch.dict(os.environ, mock_pypi_credentials):
+        run_script(
+            "./examples/ex11_using_scripts.py",
+            args=["--hello", "world"],
+            executor="docker",
+        )
 
-    with pytest.raises(SystemExit):
-        # 'argparse' tries to exit the program, since required CLI args are not given.
-        run_script("./examples/ex11_using_scripts.py", executor="docker")
+        with pytest.raises(SystemExit):
+            # 'argparse' tries to exit the program, since required CLI args are not given.
+            run_script("./examples/ex11_using_scripts.py", executor="docker")

@@ -1,24 +1,39 @@
 """
 Example of automatically translating scripts to Docker/Vertex with unipipe.
 
-To run this script, run the following CLI command:
-    unipipe run-script [--executor <EXECUTOR> | <component-options>] examples/ex11_using_scripts.py [ARGS]
+To run a script with unipipe, use the following CLI command:
+    unipipe run-script [--executor <EXECUTOR> | <COMPONENT_OPTIONS>] examples/ex11_using_scripts.py [ARGS]
+
 Examples:
+    export PYPI_USERNAME="dummy-username"
+    export PYPI_PASSWORD="dummy-password"
+
     unipipe run-script examples/ex11_using_scripts.py --hello world
-    unipipe run-script --executor vertex examples/ex11_using_scripts.py --hello Vertex
-    unipipe run-script --executor vertex \
+    unipipe run-script \
+        --executor vertex \
+        examples/ex11_using_scripts.py --hello Vertex
+    unipipe run-script \
         --packages_to_install sklearn numpy \
-         examples/ex11_using_scripts.py --hello Vertex
+         examples/ex11_using_scripts.py --hello world
+    * Override hardware with a raw JSON string, which is parsed by unipipe.
+    unipipe run-script \
+        --executor vertex \
+        --hardware '{"cpus": 4, "memory": "4G"}' \
+        examples/ex11_using_scripts.py --hello Vertex
+
+For help, please see:
+    unipipe run-script --help
 
 ---------
 
-Include the default 'dsl.component' args somewhere in your docstring.  (See below.)
-
-The block below will be parsed as Python code.
+Include the default 'dsl.component' args somewhere in your docstring. This block
+(below) will be parsed as Python code.  Note that:
 * The 'unipipe' and 'dsl' modules are imported for you.
-* Access ENV variables as: {VARIABLE_NAME}.
+* You can access ENV variables as: {VARIABLE_NAME}.
     - We can't 'import os' before defining the docstring, so it's not possible to
     access environment variables via 'os.environ["VARIABLE_NAME"]' in the docstring.
+    - Execution of the script is delayed, so you couldn't define the '__doc__'
+    property in your script as a workaround.
 
 
 @dsl.component(

@@ -1,7 +1,9 @@
 import json
 import os
 import tempfile
+from unittest import mock
 
+import pytest
 from kfp.v2.compiler import Compiler
 
 from examples.ex01_hello_world import pipeline as pipeline_01
@@ -15,6 +17,7 @@ from examples.ex08_control_flow import pipeline as pipeline_08
 from examples.ex09_advanced_control_flow import good_pipeline as pipeline_09
 from unipipe import dsl
 from unipipe.backend.kfp import KubeflowPipelinesBackend
+from unipipe.utils.scripts import component_from_script
 
 
 def _test_build_kfp_pipeline(pipeline: dsl.Pipeline):
@@ -66,4 +69,19 @@ def test_example_09():
     _test_build_kfp_pipeline(pipeline_09(name="Ned Stark"))
 
 
-# TODO: Add test for building KFP pipeline from 'unipipe.utils.scripts' methods.
+def test_example_11():
+    # This will fail, because it doesn't have any PyPI credentials as ENV variables.
+    # It should raise 'KeyError' as it tries to fetch those from 'os.environ'.
+    with pytest.raises(KeyError):
+        component_fn = component_from_script(path="./examples/ex11_using_scripts.py")
+
+    # Set mock values, so we can run the script without affecting other tests.
+    mock_pypi_credentials = {"PYPI_USERNAME": "user", "PYPI_PASSWORD": "pass"}
+    with mock.patch.dict(os.environ, mock_pypi_credentials):
+        component_fn = component_from_script(path="./examples/ex11_using_scripts.py")
+
+    @dsl.pipeline
+    def pipeline_11():
+        component_fn(["--hello", "kfp-backend"])
+
+    _test_build_kfp_pipeline(pipeline_11())
