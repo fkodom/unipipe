@@ -1,10 +1,18 @@
 """
 Example of automatically translating scripts to Docker/Vertex with unipipe.
 
+To run this script, run the following CLI command:
+    unipipe run-script [--executor <EXECUTOR> | <component-options>] examples/ex11_using_scripts.py [ARGS]
+Examples:
+    unipipe run-script examples/ex11_using_scripts.py --hello world
+    unipipe run-script --executor vertex examples/ex11_using_scripts.py --hello Vertex
+    unipipe run-script --executor vertex \
+        --packages_to_install sklearn numpy \
+         examples/ex11_using_scripts.py --hello Vertex
+
 ---------
 
-Document things about your script, then include the default 'dsl.component'
-arguments somewhere in your docstring.  (See below.)
+Include the default 'dsl.component' args somewhere in your docstring.  (See below.)
 
 The block below will be parsed as Python code.
 * The 'unipipe' and 'dsl' modules are imported for you.

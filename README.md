@@ -85,6 +85,18 @@ INFO:root:[say_hello-1603ae3e] - Hello, world!
 ```
 
 
+## Run Any Python Script
+
+Or scale **any** Python script to the cloud using the `unipipe` CLI:
+
+```bash
+# Same choices of executors as above.
+unipipe run-script --executor vertex ./examples/ex01_hello_world.py
+```
+
+This makes experimentation easy.  `unipipe` will automatically compose your script into a pipeline, and launch it with your chosen executor. [See this example for more details.](./examples/ex11_using_scripts.py)
+
+
 ## More Examples
 
 Link | Description
@@ -99,6 +111,7 @@ Link | Description
 [Control Flow](./examples/ex08_control_flow.py) | Add conditional control flow to your pipelines
 [Advanced Control Flow](./examples/ex09_advanced_control_flow.py) | Best practices for advanced control flow
 [Private Dependencies](./examples/ex10_private_dependencies.py) | Using private Python packages
+[Run Any Python Script](./examples/ex11_using_scripts.py) | Run any Python script using `unipipe`
 
 
 ## Why `unipipe`?
@@ -115,7 +128,7 @@ Link | Description
 
 ## TODO
 
-`unipipe` is still in early development, so there are lots of things to do. :sweat_smile:  I won't list everything here -- just some of the larger, long-term goals.
+I won't list everything here :sweat_smile: -- just some of the larger, long-term goals.
 
 1. Add executor for KFP clusters, in addition to Vertex.
 2. Better up-front type checking (i.e. before running the pipeline).
