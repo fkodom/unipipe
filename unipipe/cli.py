@@ -11,7 +11,7 @@ DEFAULT_SEQUENCE = ("None",)
 
 
 @click.group()
-def cli():
+def unipipe():
     pass
 
 
@@ -22,7 +22,7 @@ def validate_hardware(ctx, param, value) -> Optional[dsl.Hardware]:
         return parse_raw_as(dsl.Hardware, value)
 
 
-@cli.command(context_settings={"ignore_unknown_options": True})
+@unipipe.command(context_settings={"ignore_unknown_options": True})
 @click.argument("path", nargs=1)
 @click.argument("args", nargs=-1)
 @click.option(

@@ -52,7 +52,7 @@ setup(
     extras_require=extras_require,
     entry_points={
         "console_scripts": [
-            "unipipe = unipipe.cli:cli",
+            "unipipe = unipipe.cli:unipipe",
         ],
     },
     classifiers=[
