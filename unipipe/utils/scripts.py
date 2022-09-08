@@ -40,7 +40,7 @@ def parse_component_kwargs_from_string(decorator: str):
 
 def get_component_kwargs_from_docstring(docstring: str) -> Optional[Dict[str, Any]]:
     lines = docstring.split("\n")
-    lines = list(dropwhile(lambda x: not x.startswith("@dsl.component"), lines))
+    lines = list(dropwhile(lambda x: not x.strip().startswith("@dsl.component"), lines))
     lines = [line for line in lines if not line.strip().startswith("#")]
     if not lines:
         return None
@@ -114,11 +114,17 @@ def function_from_script(script_path: str) -> Callable:
     return getattr(module, name)
 
 
-def component_from_script(path: str, **kwargs) -> Callable[..., dsl.Component]:
-    _kwargs = get_component_kwargs_from_script(path)
+def component_from_script(path: str, **manual_kwargs) -> Callable[..., dsl.Component]:
+    default_kwargs = get_component_kwargs_from_script(path)
     func = function_from_script(path)
-    merged_kwargs = {**_kwargs, **kwargs}
-    return dsl.component(func=func, **merged_kwargs)
+
+    # Remove any 'None' or empty values that may have been included by default
+    # or forwarded from the CLI tool.
+    default_kwargs = {k: v for k, v in default_kwargs.items() if v is not None}
+    manual_kwargs = {k: v for k, v in manual_kwargs.items() if v is not None}
+    kwargs = {**default_kwargs, **manual_kwargs}
+
+    return dsl.component(func=func, **kwargs)
 
 
 def run_script(

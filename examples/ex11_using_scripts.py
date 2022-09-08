@@ -1,41 +1,4 @@
 """
-Example of automatically translating scripts to Docker/Vertex with unipipe.
-
-To run a script with unipipe, use the following CLI command:
-    unipipe run-script [--executor <EXECUTOR> | <COMPONENT_OPTIONS>] examples/ex11_using_scripts.py [ARGS]
-
-Examples:
-    export PYPI_USERNAME="dummy-username"
-    export PYPI_PASSWORD="dummy-password"
-
-    unipipe run-script examples/ex11_using_scripts.py --hello world
-    unipipe run-script \
-        --executor vertex \
-        examples/ex11_using_scripts.py --hello Vertex
-    unipipe run-script \
-        --packages_to_install sklearn numpy \
-         examples/ex11_using_scripts.py --hello world
-    * Override hardware with a raw JSON string, which is parsed by unipipe.
-    unipipe run-script \
-        --executor vertex \
-        --hardware '{"cpus": 4, "memory": "4G"}' \
-        examples/ex11_using_scripts.py --hello Vertex
-
-For help, please see:
-    unipipe run-script --help
-
----------
-
-Include the default 'dsl.component' args somewhere in your docstring. This block
-(below) will be parsed as Python code.  Note that:
-* The 'unipipe' and 'dsl' modules are imported for you.
-* You can access ENV variables as: {VARIABLE_NAME}.
-    - We can't 'import os' before defining the docstring, so it's not possible to
-    access environment variables via 'os.environ["VARIABLE_NAME"]' in the docstring.
-    - Execution of the script is delayed, so you couldn't define the '__doc__'
-    property in your script as a workaround.
-
-
 @dsl.component(
     hardware=dsl.Hardware(cpus=2, memory='1G'),
     packages_to_install=[
@@ -43,10 +6,34 @@ Include the default 'dsl.component' args somewhere in your docstring. This block
         # 'my-secret-package'
     ],
     pip_index_urls=[
+        # Example of using ENV variables to set private PyPI credentials.
         'https://{PYPI_USERNAME}:{PYPI_PASSWORD}@my-private-pypi.org/simple',
     ],
 )
 """
+
+# Example of running arbitrary Python scripts in Docker/Vertex with unipipe.
+# Use the '@dsl.component' decorator in your docstring to declare the *default*
+# hardware, packages, etc. for this script component.  You can override any of
+# these defaults with the CLI tool.
+#
+# NOTE: Your docstring can include more text, too. But for clarity, this example
+# only contains the '@dsl.component' decorator and arguments.
+# NOTE: This script requires (dummy) env variables PYPI_USERNAME and PYPI_PASSWORD.
+#     export PYPI_USERNAME="user"
+#     export PYPI_PASSWORD="pass"
+#
+# CLI command:
+#     unipipe run-script [--executor <EXECUTOR> | <COMPONENT_OPTIONS>] examples/ex11_using_scripts.py [ARGS]
+#
+# Examples:
+#     unipipe run-script examples/ex11_using_scripts.py --hello world
+#     unipipe run-script \
+#         --executor vertex \
+#         examples/ex11_using_scripts.py --hello Vertex
+#
+# For more details on usage and CLI options, please see:
+#     unipipe run-script --help
 
 import argparse
 

@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Sequence
 
 import click
 from pydantic import parse_raw_as
@@ -7,14 +7,19 @@ from unipipe import dsl
 from unipipe.executor import EXECUTOR_IMPORTS
 from unipipe.utils.scripts import run_script as unipipe_run_script
 
+DEFAULT_SEQUENCE = ("None",)
+
 
 @click.group()
 def cli():
     pass
 
 
-def validate_hardware(ctx, param, value) -> dsl.Hardware:
-    return parse_raw_as(dsl.Hardware, value)
+def validate_hardware(ctx, param, value) -> Optional[dsl.Hardware]:
+    if value is None:
+        return None
+    else:
+        return parse_raw_as(dsl.Hardware, value)
 
 
 @cli.command(context_settings={"ignore_unknown_options": True})
@@ -51,6 +56,7 @@ def validate_hardware(ctx, param, value) -> dsl.Hardware:
     multiple=True,
     type=str,
     help="Add a Python package to install for this job. Ex: 'torch==1.10.0'",
+    default=DEFAULT_SEQUENCE,
 )
 @click.option(
     "-i",
@@ -59,6 +65,7 @@ def validate_hardware(ctx, param, value) -> dsl.Hardware:
     multiple=True,
     type=str,
     help="Add a custom PyPI URL for installing packages. Ex: 'https://pypi.org/simple'",
+    default=DEFAULT_SEQUENCE,
 )
 @click.option(
     "-h",
@@ -74,15 +81,20 @@ def validate_hardware(ctx, param, value) -> dsl.Hardware:
 )
 def run_script(
     path: str,
-    args: List[str],
+    args: Sequence[str],
     executor: str,
     name: Optional[str] = None,
     # Component args
     base_image: Optional[str] = None,
-    packages_to_install: Optional[List[str]] = None,
-    pip_index_urls: Optional[List[str]] = None,
+    packages_to_install: Optional[Sequence[str]] = None,
+    pip_index_urls: Optional[Sequence[str]] = None,
     hardware: Optional[str] = None,
 ):
+    if pip_index_urls == DEFAULT_SEQUENCE:
+        pip_index_urls = None
+    if packages_to_install == DEFAULT_SEQUENCE:
+        packages_to_install = None
+
     unipipe_run_script(
         path=path,
         args=args,
