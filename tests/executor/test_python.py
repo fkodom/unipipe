@@ -67,7 +67,3 @@ def test_example_11():
     mock_pypi_credentials = {"PYPI_USERNAME": "user", "PYPI_PASSWORD": "pass"}
     with mock.patch.dict(os.environ, mock_pypi_credentials):
         run_script("./examples/ex11_using_scripts.py", args=["--hello", "world"])
-
-        with pytest.raises(SystemExit):
-            # 'argparse' tries to exit the program, since required CLI args are not given.
-            run_script("./examples/ex11_using_scripts.py")

@@ -87,7 +87,3 @@ def test_example_11():
             args=["--hello", "world"],
             executor="docker",
         )
-
-        with pytest.raises(SystemExit):
-            # 'argparse' tries to exit the program, since required CLI args are not given.
-            run_script("./examples/ex11_using_scripts.py", executor="docker")

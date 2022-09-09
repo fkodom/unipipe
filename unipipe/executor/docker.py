@@ -180,7 +180,7 @@ def _get_cli_argument(name: str, value: Any) -> str:
         arg_list_string = "[" + ", ".join(arg_strings) + "]"
         return f'--{name}="{arg_list_string}"'
     else:
-        return f"--{name}={value}"
+        return f"--{name}='{value}'"
 
 
 def build_and_run(
