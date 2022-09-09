@@ -48,8 +48,13 @@ setup(
     description="project_description",
     long_description=open("README.md").read(),
     long_description_content_type="text/markdown",
-    install_requires=["pydantic", "typing_extensions"],
+    install_requires=["click", "pydantic", "typing_extensions"],
     extras_require=extras_require,
+    entry_points={
+        "console_scripts": [
+            "unipipe = unipipe.cli:unipipe",
+        ],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",

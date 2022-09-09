@@ -1,7 +1,8 @@
 from collections import defaultdict
 from typing import Any, Callable, Dict, List, Optional
 
-from unipipe.utils.annotations import get_annotations, infer_input_types
+from unipipe.utils.annotations import infer_input_types
+from unipipe.utils.compat import get_annotations
 
 
 class MultipleDispatch:

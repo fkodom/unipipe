@@ -50,8 +50,10 @@ def resolve_value(_locals: Dict, value: Any) -> Any:
         if value.name in _locals:
             return _locals[value.name]
         return resolve_value(_locals, value.return_value)
-    elif isinstance(value, (tuple, list)):
+    elif isinstance(value, tuple):
         return tuple(resolve_value(_locals, x) for x in value)
+    elif isinstance(value, list):
+        return list(resolve_value(_locals, x) for x in value)
     else:
         return value
 

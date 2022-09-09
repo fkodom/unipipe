@@ -6,7 +6,7 @@ import tempfile
 import textwrap
 from inspect import getsource, isclass
 from itertools import dropwhile
-from typing import Any, Callable, Dict, Iterable, Optional, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from docker.errors import BuildError
 from docker.types import DeviceRequest
@@ -14,7 +14,7 @@ from docker.types import DeviceRequest
 import docker
 from unipipe.dsl import Component, ConditionalPipeline, LazyAttribute, Pipeline
 from unipipe.executor.base import LocalExecutor
-from unipipe.utils.annotations import get_annotations
+from unipipe.utils.compat import get_annotations
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict  # pylint: disable=no-name-in-module
@@ -23,11 +23,13 @@ else:
 
 
 IMPORTS = """
+import typing
+from typing import *
+
 import unipipe
 from unipipe import dsl
 from unipipe.dsl import *
 from unipipe.utils.ops import dispatch
-from typing import *
 """
 
 LOGGING = """
@@ -35,9 +37,16 @@ import logging
 logging.getLogger().setLevel({logging_level})
 """
 
+ARGPARSE_LIST = "argparse_list"
 COMMAND = """
 import argparse
+import ast
 import json
+
+def {argparse_list}(s):
+    data = ast.literal_eval(s)
+    print(s, data)
+    return tuple(str(x) for x in data)
 
 parser = argparse.ArgumentParser()
 {arguments}
@@ -71,16 +80,32 @@ def _get_component_func_source(func: Callable) -> str:
     return "\n".join(["@dsl.component", *lines])
 
 
+def _get_argparse_argument(name: str, annotation: Type) -> str:
+    if hasattr(annotation, "__name__"):
+        if annotation in (List[str], Tuple[str]):
+            # As of Python 3.10, the List/Tuple classes have a '__name__' property
+            args = f"type={ARGPARSE_LIST}"
+        else:
+            args = f"type={annotation.__name__}"
+    elif hasattr(annotation, "_name"):
+        args = f"type={ARGPARSE_LIST}"
+    else:
+        raise TypeError(f"Could not determine a valid type string for '{annotation}'.")
+
+    return f"parser.add_argument('--{name}', {args})"
+
+
 def build_script(component: Component) -> str:
     _logging = LOGGING.format(logging_level=component.logging_level)
     function = _get_component_func_source(component.func)
     annotations = get_annotations(component.func, eval_str=True)
     argument_lines = [
-        f"parser.add_argument('--{k}', type={v.__name__})"
+        _get_argparse_argument(name=k, annotation=v)
         for k, v in annotations.items()
         if k != "return"
     ]
     command = COMMAND.format(
+        argparse_list=ARGPARSE_LIST,
         arguments="\n".join(argument_lines),
         function_name=component.func.__name__,
     )
@@ -146,6 +171,15 @@ class Volume(TypedDict):
     mode: str
 
 
+def _get_cli_argument(name: str, value: Any) -> str:
+    if isinstance(value, (list, tuple)):
+        arg_strings = [f"'{v}'" for v in value]
+        arg_list_string = "[" + ", ".join(arg_strings) + "]"
+        return f'--{name}="{arg_list_string}"'
+    else:
+        return f"--{name}='{value}'"
+
+
 def build_and_run(
     component: Component,
     arguments: Optional[Dict[str, Any]] = None,
@@ -172,7 +206,9 @@ def build_and_run(
             f.write(script)
 
         volumes[tempdir] = {"bind": "/app/", "mode": "rw"}
-        args = " ".join([f"--{k}='{v}'" for k, v in arguments.items()])
+        args = " ".join(
+            [_get_cli_argument(name=k, value=v) for k, v in arguments.items()]
+        )
 
         device_requests = []
         accelerator = component.hardware.accelerator

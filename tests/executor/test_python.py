@@ -1,3 +1,6 @@
+import os
+from unittest import mock
+
 import pytest
 
 import unipipe
@@ -11,6 +14,7 @@ from examples.ex07_nested_pipelines import pipeline as pipeline_07
 from examples.ex08_control_flow import pipeline as pipeline_08
 from examples.ex09_advanced_control_flow import bad_pipeline as bad_pipeline_09
 from examples.ex09_advanced_control_flow import good_pipeline as pipeline_09
+from unipipe.utils.scripts import run_script
 
 
 def test_example_01():
@@ -51,3 +55,15 @@ def test_example_09():
         unipipe.run(pipeline=bad_pipeline_09(name="Ned Stark"), executor="python")
     unipipe.run(pipeline=bad_pipeline_09(name="Tyrion Lannister"), executor="python")
     unipipe.run(pipeline=pipeline_09(name="Ned Stark"), executor="python")
+
+
+def test_example_11():
+    # This will fail, because it doesn't have any PyPI credentials as ENV variables.
+    # It should raise 'KeyError' as it tries to fetch those from 'os.environ'.
+    with pytest.raises(KeyError):
+        run_script("./examples/ex11_using_scripts.py", args=["--hello", "world"])
+
+    # Set mock values, so we can run the script without affecting other tests.
+    mock_pypi_credentials = {"PYPI_USERNAME": "user", "PYPI_PASSWORD": "pass"}
+    with mock.patch.dict(os.environ, mock_pypi_credentials):
+        run_script("./examples/ex11_using_scripts.py", args=["--hello", "world"])
