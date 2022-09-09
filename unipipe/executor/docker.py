@@ -80,14 +80,6 @@ def _get_component_func_source(func: Callable) -> str:
     return "\n".join(["@dsl.component", *lines])
 
 
-# def _get_type_annotation_string(_type: Type) -> str:
-#     if hasattr(_type, "__name__"):
-#         return _type.__name__
-#     elif isclass(_type) and issubclass(_type, (list, tuple)):
-#         return _get_type_annotation_string(str)
-#     raise TypeError(f"Could not determine string representation for type '{_type}'.")
-
-
 def _get_argparse_argument(name: str, annotation: Type) -> str:
     if hasattr(annotation, "__name__"):
         if annotation in (List[str], Tuple[str]):
