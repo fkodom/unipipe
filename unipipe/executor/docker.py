@@ -6,7 +6,7 @@ import tempfile
 import textwrap
 from inspect import getsource, isclass
 from itertools import dropwhile
-from typing import Any, Callable, Dict, Iterable, Optional, Type, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
 from docker.errors import BuildError
 from docker.types import DeviceRequest
@@ -45,6 +45,7 @@ import json
 
 def {argparse_list}(s):
     data = ast.literal_eval(s)
+    print(s, data)
     return tuple(str(x) for x in data)
 
 parser = argparse.ArgumentParser()
@@ -89,7 +90,11 @@ def _get_component_func_source(func: Callable) -> str:
 
 def _get_argparse_argument(name: str, annotation: Type) -> str:
     if hasattr(annotation, "__name__"):
-        args = f"type={annotation.__name__}"
+        if annotation in (List[str], Tuple[str]):
+            # As of Python 3.10, the List/Tuple classes have a '__name__' property
+            args = f"type={ARGPARSE_LIST}"
+        else:
+            args = f"type={annotation.__name__}"
     elif hasattr(annotation, "_name"):
         args = f"type={ARGPARSE_LIST}"
     else:
