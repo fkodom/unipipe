@@ -23,7 +23,8 @@ from uuid import uuid1
 from pydantic import BaseModel, parse_obj_as
 
 from unipipe.utils import ops
-from unipipe.utils.annotations import get_annotations, wrap_cast_output_type
+from unipipe.utils.annotations import wrap_cast_output_type
+from unipipe.utils.compat import get_annotations
 
 T_co = TypeVar("T_co", covariant=True)
 

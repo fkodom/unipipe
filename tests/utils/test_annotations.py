@@ -1,12 +1,8 @@
 from typing import NamedTuple
 
 from unipipe import dsl
-from unipipe.utils.annotations import (
-    get_annotations,
-    infer_input_types,
-    infer_type,
-    resolve_annotations,
-)
+from unipipe.utils.annotations import infer_input_types, infer_type, resolve_annotations
+from unipipe.utils.compat import get_annotations
 
 
 def _stringified_annotations(a: "int") -> "str":

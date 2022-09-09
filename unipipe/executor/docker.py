@@ -14,7 +14,7 @@ from docker.types import DeviceRequest
 import docker
 from unipipe.dsl import Component, ConditionalPipeline, LazyAttribute, Pipeline
 from unipipe.executor.base import LocalExecutor
-from unipipe.utils.annotations import get_annotations, infer_type
+from unipipe.utils.compat import get_annotations
 
 if sys.version_info >= (3, 8):
     from typing import TypedDict  # pylint: disable=no-name-in-module

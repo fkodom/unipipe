@@ -3,25 +3,18 @@ from __future__ import annotations
 import ast
 import importlib
 import os
+import random
 import sys
 import tempfile
+from functools import lru_cache
 from itertools import dropwhile
 from typing import Any, Callable, Dict, Optional, Sequence
 
 import unipipe
 from unipipe import dsl
+from unipipe.utils.compat import removeprefix, removesuffix
 
-
-def _removeprefix(string: str, prefix: str) -> str:
-    if string.startswith(prefix):
-        string = string[len(prefix) :]
-    return string
-
-
-def _removesuffix(string: str, suffix: str) -> str:
-    if string.endswith(suffix):
-        string = string[: -len(suffix)]
-    return string
+TEMPDIR = tempfile.TemporaryDirectory()
 
 
 def get_docstring_from_script(path: str) -> Optional[str]:
@@ -31,9 +24,9 @@ def get_docstring_from_script(path: str) -> Optional[str]:
 
 
 def parse_component_kwargs_from_string(decorator: str):
-    decorator = _removeprefix(decorator, "@")
-    decorator = _removeprefix(decorator, "dsl.")
-    decorator = _removeprefix(decorator, "component")
+    decorator = removeprefix(decorator, "@")
+    decorator = removeprefix(decorator, "dsl.")
+    decorator = removeprefix(decorator, "component")
     decorator = decorator.format(**os.environ)
     return eval(f"dict{decorator}")
 
@@ -63,16 +56,12 @@ def get_component_kwargs_from_docstring(docstring: str) -> Optional[Dict[str, An
     raise exc
 
 
-def get_component_kwargs_from_script(script_path: str) -> Dict[str, Any]:
+def get_component_kwargs_from_script(script_path: str) -> Optional[Dict[str, Any]]:
     docstring = get_docstring_from_script(script_path)
     if docstring is None:
-        return {}
+        return None
 
-    kwargs = get_component_kwargs_from_docstring(docstring)
-    if kwargs is None:
-        kwargs = {}
-
-    return kwargs
+    return get_component_kwargs_from_docstring(docstring)
 
 
 FUNCTION_NAME = "script_component"
@@ -94,8 +83,14 @@ def {function_name}(args: List[str]) -> None:
 """
 
 
+def _random_python_file_name() -> str:
+    characters = "abcdefghijklmnopqrstuvwxyz_"
+    chosen = random.choices(characters, k=16)
+    return "".join(chosen) + ".py"
+
+
 def function_from_script(script_path: str) -> Callable:
-    name = _removesuffix(os.path.basename(script_path), ".py")
+    name = removesuffix(os.path.basename(script_path), ".py")
     with open(script_path, "r") as f:
         script_lines = f.readlines()
     indent = " " * 4
@@ -103,19 +98,26 @@ def function_from_script(script_path: str) -> Callable:
         function_name=name, script_code=indent.join(script_lines)
     )
 
-    fp = tempfile.NamedTemporaryFile("w", suffix=".py", delete=False)
-    fp.write(code)
-    fp.flush()
+    file_name = _random_python_file_name()
+    path = os.path.join(TEMPDIR.name, file_name)
+    with open(path, "w") as f:
+        f.write(code)
+        f.flush()
 
-    module_path, file_name = os.path.split(fp.name)
-    sys.path.append(module_path)
-    module = importlib.import_module(_removesuffix(file_name, ".py"))
+    if TEMPDIR.name not in sys.path:
+        sys.path.append(TEMPDIR.name)
+    module = importlib.import_module(removesuffix(file_name, ".py"))
 
     return getattr(module, name)
 
 
 def component_from_script(path: str, **manual_kwargs) -> Callable[..., dsl.Component]:
+    # NOTE: Get the default kwargs first!  If there is a syntax error in the docstring,
+    # we prefer this function to throw a 'SyntaxError'.
     default_kwargs = get_component_kwargs_from_script(path)
+    if default_kwargs is None:
+        default_kwargs = {}
+
     func = function_from_script(path)
 
     # Remove any 'None' or empty values that may have been included by default

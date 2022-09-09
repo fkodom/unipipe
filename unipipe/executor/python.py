@@ -5,7 +5,7 @@ from typing import Any, Dict
 
 from unipipe.dsl import Component, ConditionalPipeline, LazyAttribute, Pipeline
 from unipipe.executor.base import LocalExecutor
-from unipipe.utils.annotations import get_annotations
+from unipipe.utils.compat import get_annotations
 
 
 class PythonExecutor(LocalExecutor):
