@@ -397,9 +397,14 @@ class ConditionalPipeline(Pipeline):
 
 
 @contextmanager
-def condition(operand1: Any, operand2: Any, comparator: Callable[[Any, Any], bool]):
+def condition(
+    operand1: Any,
+    operand2: Any,
+    comparator: Callable[[Any, Any], bool],
+    name: Optional[str] = None,
+):
     _condition = Condition(operand1=operand1, operand2=operand2, comparator=comparator)
-    pipeline = ConditionalPipeline(condition=_condition)
+    pipeline = ConditionalPipeline(name=name, condition=_condition)
     try:
         with pipeline:
             yield pipeline
@@ -407,5 +412,12 @@ def condition(operand1: Any, operand2: Any, comparator: Callable[[Any, Any], boo
         pass
 
 
-equal = partial(condition, comparator=lambda o1, o2: o1 == o2)
-not_equal = partial(condition, comparator=lambda o1, o2: o1 != o2)
+equal = partial(condition, comparator=lambda o1, o2: o1 == o2, name="equal")
+not_equal = partial(condition, comparator=lambda o1, o2: o1 != o2, name="not_equal")
+depends_on = partial(
+    condition,
+    # Use a unique, random string, so the comparator always evaluates to True.
+    operand2=str(uuid1()),
+    comparator=lambda o1, o2: o1 != o2,
+    name="depends_on",
+)
