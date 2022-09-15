@@ -412,8 +412,20 @@ def condition(
         pass
 
 
-equal = partial(condition, comparator=lambda o1, o2: o1 == o2, name="equal")
-not_equal = partial(condition, comparator=lambda o1, o2: o1 != o2, name="not_equal")
+@wraps(condition)
+def equal(operand1: Any, operand2: Any, name: Optional[str] = None):
+    _uuid = uuid1()
+    if name is None:
+        name = f"equal_{_uuid}"
+    return condition(operand1, operand2, comparator=lambda o1, o2: o1 == o2, name=name)
+
+
+@wraps(condition)
+def not_equal(operand1: Any, operand2: Any, name: Optional[str] = None):
+    _uuid = uuid1()
+    if name is None:
+        name = f"equal_{_uuid}"
+    return condition(operand1, operand2, comparator=lambda o1, o2: o1 != o2, name=name)
 
 
 @wraps(condition)
