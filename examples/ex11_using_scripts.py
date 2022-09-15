@@ -35,10 +35,12 @@
 # For more details on usage and CLI options, please see:
 #     unipipe run-script --help
 
-import argparse
 
-parser = argparse.ArgumentParser()
-parser.add_argument("--hello", type=str, required=True)
-args = parser.parse_args()
+if __name__ == "__main__":
+    import argparse
 
-print(f"Hello, {args.hello}!")
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--hello", type=str, required=True)
+    args = parser.parse_args()
+
+    print(f"Hello, {args.hello}!")

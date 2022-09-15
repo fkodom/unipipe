@@ -78,6 +78,7 @@ def {function_name}(args: List[str]) -> None:
     import sys
 
     sys.argv = ["{function_name}.py", *args]
+    __name__ = "__main__"
 
     {script_code}
 """
