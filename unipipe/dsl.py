@@ -414,13 +414,19 @@ def condition(
 
 equal = partial(condition, comparator=lambda o1, o2: o1 == o2, name="equal")
 not_equal = partial(condition, comparator=lambda o1, o2: o1 != o2, name="not_equal")
-_depends_on = partial(
-    condition,
-    # Use a unique, random string, so the comparator always evaluates to True.
-    operand2=str(uuid1()),
-    comparator=lambda o1, o2: o1 != o2,
-    name="depends_on",
-)
+
+
+@wraps(condition)
+def _depends_on(operand1: Any, name: Optional[str] = None):
+    _uuid = uuid1()
+    if name is None:
+        name = f"depends_on_{_uuid}"
+    return condition(
+        operand1,
+        operand2=str(_uuid),
+        comparator=lambda o1, o2: o1 != o2,
+        name=name,
+    )
 
 
 @contextmanager
