@@ -53,7 +53,6 @@ def test_example_08():
 def test_example_09():
     with pytest.raises(KeyError):
         unipipe.run(pipeline=bad_pipeline_09(name="Ned Stark"), executor="python")
-    unipipe.run(pipeline=bad_pipeline_09(name="Tyrion Lannister"), executor="python")
     unipipe.run(pipeline=pipeline_09(name="Ned Stark"), executor="python")
 
 

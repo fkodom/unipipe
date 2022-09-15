@@ -414,10 +414,27 @@ def condition(
 
 equal = partial(condition, comparator=lambda o1, o2: o1 == o2, name="equal")
 not_equal = partial(condition, comparator=lambda o1, o2: o1 != o2, name="not_equal")
-depends_on = partial(
+_depends_on = partial(
     condition,
     # Use a unique, random string, so the comparator always evaluates to True.
     operand2=str(uuid1()),
     comparator=lambda o1, o2: o1 != o2,
     name="depends_on",
 )
+
+
+@contextmanager
+def depends_on(*components: Component):
+    stack = ExitStack()
+    component_stack = stack.enter_context(ExitStack())
+
+    def depends(*args):
+        nonlocal component_stack
+        condition = _depends_on(args[0])
+        component_stack = component_stack.enter_context(condition)
+
+        if len(args) > 1:
+            return depends(*args[1:])
+
+    depends(*components)
+    yield stack

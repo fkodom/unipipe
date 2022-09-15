@@ -88,6 +88,11 @@ def good_pipeline(name: str):
         with dsl.depends_on(stark_motto):
             hello(first_name=first, last_name=last)
 
+    # You can also include multiple components in the 'depends_on' arguments:
+    mottos = [lannister_house_motto() for _ in range(3)]
+    with dsl.depends_on(*mottos):
+        echo(phrase="That's too many Lannisters...")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -96,9 +101,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        unipipe.run(executor=args.executor, pipeline=bad_pipeline(name=args.name))
+        unipipe.run(executor="python", pipeline=bad_pipeline(name=args.name))
     except KeyError:
-        print("Bad pipeline crashed with KeyError, since last name is not Lannister.\n")
+        print("Bad pipeline crashed with KeyError.\n")
 
     unipipe.run(executor=args.executor, pipeline=good_pipeline(name=args.name))
 
@@ -107,8 +112,12 @@ if __name__ == "__main__":
     # Expected output:
     #
     # INFO:root:[split_name-9701d30e] - ('Ned', 'Stark')
-    # Bad pipeline crashed with KeyError, since last name is not Lannister :(
+    # Bad pipeline crashed with KeyError. :(
     #
     # INFO:root:[split_name-48b02fac] - ('Ned', 'Stark')
     # INFO:root:[house_motto-48b032cc] - Winter is coming...
     # INFO:root:[hello-48b03150] - Seven blessings, Ned of house Stark!
+    # INFO:root:[hello-48b03150] - A Lannister always pays their debts...
+    # INFO:root:[hello-48b03150] - A Lannister always pays their debts...
+    # INFO:root:[hello-48b03150] - A Lannister always pays their debts...
+    # INFO:root:[hello-48b03150] - That's too many Lannisters...
