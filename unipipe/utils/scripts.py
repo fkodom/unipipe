@@ -90,6 +90,7 @@ def _random_python_file_name() -> str:
     return "".join(chosen) + ".py"
 
 
+@lru_cache()
 def function_from_script(script_path: str) -> Callable:
     name = removesuffix(os.path.basename(script_path), ".py")
     with open(script_path, "r") as f:
@@ -138,9 +139,9 @@ def run_script(
     **kwargs,
 ):
     component_fn = component_from_script(path=path, **kwargs)
-    # Component functions expect a 'List' object. For technical reasons, it's much
-    # easier to type-check a strict 'List' annotation than 'Sequence', but we want
-    # the 'run_script' method to be as user-friendly as possible.
+    # Component functions expect a 'List' object. It's easier to type-check a strict
+    # 'List' annotation than 'Sequence', but we want the 'run_script' method to be as
+    # user-friendly as possible.
     args = list(args)
 
     @dsl.pipeline(name=name)

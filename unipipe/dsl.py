@@ -397,9 +397,14 @@ class ConditionalPipeline(Pipeline):
 
 
 @contextmanager
-def condition(operand1: Any, operand2: Any, comparator: Callable[[Any, Any], bool]):
+def condition(
+    operand1: Any,
+    operand2: Any,
+    comparator: Callable[[Any, Any], bool],
+    name: Optional[str] = None,
+):
     _condition = Condition(operand1=operand1, operand2=operand2, comparator=comparator)
-    pipeline = ConditionalPipeline(condition=_condition)
+    pipeline = ConditionalPipeline(name=name, condition=_condition)
     try:
         with pipeline:
             yield pipeline
@@ -407,5 +412,47 @@ def condition(operand1: Any, operand2: Any, comparator: Callable[[Any, Any], boo
         pass
 
 
-equal = partial(condition, comparator=lambda o1, o2: o1 == o2)
-not_equal = partial(condition, comparator=lambda o1, o2: o1 != o2)
+@wraps(condition)
+def equal(operand1: Any, operand2: Any, name: Optional[str] = None):
+    _uuid = uuid1()
+    if name is None:
+        name = f"equal_{_uuid}"
+    return condition(operand1, operand2, comparator=lambda o1, o2: o1 == o2, name=name)
+
+
+@wraps(condition)
+def not_equal(operand1: Any, operand2: Any, name: Optional[str] = None):
+    _uuid = uuid1()
+    if name is None:
+        name = f"equal_{_uuid}"
+    return condition(operand1, operand2, comparator=lambda o1, o2: o1 != o2, name=name)
+
+
+@wraps(condition)
+def _depends_on(operand1: Any, name: Optional[str] = None):
+    _uuid = uuid1()
+    if name is None:
+        name = f"depends_on_{_uuid}"
+    return condition(
+        operand1,
+        operand2=str(_uuid),
+        comparator=lambda o1, o2: o1 != o2,
+        name=name,
+    )
+
+
+@contextmanager
+def depends_on(*components: Component):
+    stack = ExitStack()
+    component_stack = stack.enter_context(ExitStack())
+
+    def depends(*args):
+        nonlocal component_stack
+        condition = _depends_on(args[0])
+        component_stack = component_stack.enter_context(condition)
+
+        if len(args) > 1:
+            return depends(*args[1:])
+
+    depends(*components)
+    yield stack

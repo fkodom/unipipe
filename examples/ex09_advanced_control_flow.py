@@ -28,6 +28,11 @@ def split_name(name: str) -> NamedTuple("Output", first=str, last=str):  # type:
 
 
 @dsl.component
+def hello(first_name: str, last_name: str) -> str:
+    return f"Seven blessings, {first_name} of house {last_name}!"
+
+
+@dsl.component
 def lannister_house_motto() -> str:
     return "A Lannister always pays their debts..."
 
@@ -43,27 +48,22 @@ def bad_pipeline(name: str):
     _, last = split_name(name=name)
 
     with dsl.equal(last, "Lannister"):
-        # This is a bug!!
-        #
-        # Ordinarily, you might think that 'motto' is only over-written when the
-        # above condition is True.  But since 'unipipe' traces every execution
-        # branch, and delays execution until a backend is chosen, this line below
-        # will always be executed in the local process.
         motto = lannister_house_motto()
 
-    # What happens when the 'dsl.equal(...)' clause above is False?
+    # This will cause an exception (KeyError)!
     #
-    # The local variable 'motto' refers to the result of 'lannister_house_motto()'.
-    # But if that component was never executed, that reference is not valid.
-    # The following line will raise an error, unless the user provided "Lannister"
-    # as the last name.
+    # Variables are not accessible after exiting the conditional scope above.
+    # We can't guarantee that 'motto' exists, because execution of the
+    # 'lannister_house_motto' component is delayed to the chosen backend (e.g.
+    # Docker, Vertex, etc). In the local pipeline scope, there's not way of knowing
+    # that 'lannister_house_motto' was ever executed in the first place.
     echo(phrase=motto)
 
 
 @dsl.pipeline
 def good_pipeline(name: str):
     motto = "Winter is coming..."
-    _, last = split_name(name=name)
+    first, last = split_name(name=name)
 
     # This is valid for all input names.  Avoid over-writing the 'motto' variable.
     #
@@ -73,7 +73,25 @@ def good_pipeline(name: str):
         lannister_motto = lannister_house_motto()
         echo(phrase=lannister_motto)
     with dsl.not_equal(last, "Lannister"):
-        echo(phrase=motto)
+        stark_motto = echo(phrase=motto)
+
+        # When components have side effects, such as modifying remote data, you can
+        # mark other pipeline components as dependent. This ensures that the 'hello'
+        # component below never executes before 'stark_motto' is returned.  Otherwise,
+        # KubeFlow would try to run them in parallel, since 'hello' is not explicitly
+        # dependent on 'stark_motto'.
+        #
+        # 'dsl.depends_on' is treated as a conditional clause, since the execution of
+        # everything in this 'with' clause is dependent on 'stark_motto'. As a result,
+        # none of the variables created in this context would be accessible outside
+        # of the 'with' clause.
+        with dsl.depends_on(stark_motto):
+            hello(first_name=first, last_name=last)
+
+    # You can also include multiple components in the 'depends_on' arguments:
+    mottos = [lannister_house_motto() for _ in range(3)]
+    with dsl.depends_on(*mottos):
+        echo(phrase="That's too many Lannisters...")
 
 
 if __name__ == "__main__":
@@ -83,9 +101,9 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     try:
-        unipipe.run(executor=args.executor, pipeline=bad_pipeline(name=args.name))
+        unipipe.run(executor="python", pipeline=bad_pipeline(name=args.name))
     except KeyError:
-        print("Bad pipeline crashed with KeyError, since last name is not Lannister :(")
+        print("Bad pipeline crashed with KeyError.\n")
 
     unipipe.run(executor=args.executor, pipeline=good_pipeline(name=args.name))
 
@@ -94,7 +112,12 @@ if __name__ == "__main__":
     # Expected output:
     #
     # INFO:root:[split_name-9701d30e] - ('Ned', 'Stark')
-    # Bad pipeline crashed with KeyError, since last name is not Lannister :(
+    # Bad pipeline crashed with KeyError. :(
     #
     # INFO:root:[split_name-48b02fac] - ('Ned', 'Stark')
     # INFO:root:[house_motto-48b032cc] - Winter is coming...
+    # INFO:root:[hello-48b03150] - Seven blessings, Ned of house Stark!
+    # INFO:root:[hello-48b03150] - A Lannister always pays their debts...
+    # INFO:root:[hello-48b03150] - A Lannister always pays their debts...
+    # INFO:root:[hello-48b03150] - A Lannister always pays their debts...
+    # INFO:root:[hello-48b03150] - That's too many Lannisters...

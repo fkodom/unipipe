@@ -87,7 +87,7 @@ def build_pipeline_with_locals(pipeline: Pipeline, _locals: Dict[str, Any]):
             if isinstance(operand2, bool):
                 operand2 = str(operand2).lower()
 
-            with kfp_dsl.Condition(comparator(operand1, operand2)):
+            with kfp_dsl.Condition(comparator(operand1, operand2), name=component.name):
                 result, _locals = build_pipeline_with_locals(
                     component, _locals=__locals
                 )

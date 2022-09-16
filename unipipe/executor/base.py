@@ -37,7 +37,7 @@ class LocalExecutor(Executor):
             }
             __locals = {**_locals, **kwargs}
             if isinstance(component, ConditionalPipeline):
-                result, _locals = self.run_conditional_pipeline_with_locals(
+                result, _ = self.run_conditional_pipeline_with_locals(
                     component, _locals=__locals
                 )
             elif isinstance(component, Pipeline):
