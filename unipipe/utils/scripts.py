@@ -67,13 +67,14 @@ def get_component_kwargs_from_script(script_path: str) -> Optional[Dict[str, Any
 FUNCTION_NAME = "script_component"
 FUNCTION_CODE = """
 from typing import *
+from uuid import uuid1
 
 import unipipe
 from unipipe import dsl
 from unipipe.dsl import *
 
 
-def {function_name}(args: List[str]) -> None:
+def {function_name}(args: List[str]) -> str:
     import argparse
     import sys
 
@@ -81,6 +82,8 @@ def {function_name}(args: List[str]) -> None:
     __name__ = "__main__"
 
     {script_code}
+
+    return str(uuid1())
 """
 
 
