@@ -107,6 +107,11 @@ def test_get_component_kwargs_from_script(
         assert component_kwargs == get_component_kwargs_from_script(script)
 
 
+def test_function_from_script(script: str):
+    func = function_from_script(script)
+    assert func.__name__ == SCRIPT_NAME
+
+
 def test_component_from_script(script: str, docstring: Optional[str]):
     if docstring == INVALID_DOCSTRING:
         with pytest.raises(SyntaxError):

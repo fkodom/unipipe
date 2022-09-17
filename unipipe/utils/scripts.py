@@ -6,7 +6,7 @@ import os
 import random
 import sys
 import tempfile
-from functools import lru_cache
+from contextlib import ExitStack
 from itertools import dropwhile
 from typing import Any, Callable, Dict, Optional, Sequence
 
@@ -14,7 +14,7 @@ import unipipe
 from unipipe import dsl
 from unipipe.utils.compat import removeprefix, removesuffix
 
-TEMPDIR = tempfile.TemporaryDirectory()
+EXIT_STACK = ExitStack()
 
 
 def get_docstring_from_script(path: str) -> Optional[str]:
@@ -93,7 +93,6 @@ def _random_python_file_name() -> str:
     return "".join(chosen) + ".py"
 
 
-@lru_cache()
 def function_from_script(script_path: str) -> Callable:
     name = removesuffix(os.path.basename(script_path), ".py")
     with open(script_path, "r") as f:
@@ -103,14 +102,15 @@ def function_from_script(script_path: str) -> Callable:
         function_name=name, script_code=indent.join(script_lines)
     )
 
+    tempdir = EXIT_STACK.enter_context(tempfile.TemporaryDirectory())
     file_name = _random_python_file_name()
-    path = os.path.join(TEMPDIR.name, file_name)
+    path = os.path.join(tempdir, file_name)
     with open(path, "w") as f:
         f.write(code)
         f.flush()
 
-    if TEMPDIR.name not in sys.path:
-        sys.path.append(TEMPDIR.name)
+    if tempdir not in sys.path:
+        sys.path.append(tempdir)
     module = importlib.import_module(removesuffix(file_name, ".py"))
 
     return getattr(module, name)
