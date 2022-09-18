@@ -26,6 +26,8 @@ from unipipe.utils import ops
 from unipipe.utils.annotations import infer_type, wrap_cast_output_type
 from unipipe.utils.compat import get_annotations
 
+ALLOWED_TYPES = (str, int, float, bool, list, tuple, None)
+ALLOWED_TYPE_STRINGS = [getattr(t, "__name__", str(t)) for t in ALLOWED_TYPES]
 T_co = TypeVar("T_co", covariant=True)
 
 
@@ -180,13 +182,27 @@ class Component(_Operable, Generic[T_co]):
         self.hardware = parse_obj_as(Hardware, hardware) if hardware else Hardware()
         self.base_image = base_image or _base_image_for_hardware(self.hardware)
 
-        self.type_check_inputs()
+        self.type_check()
         pipeline = PipelineContext().current
         if pipeline is not None:
             pipeline.components.append(self)
 
-    def type_check_inputs(self):
+    def type_check(self):
         annotations = get_annotations(self.func, eval_str=True)
+        if "return" not in annotations:
+            raise TypeError(
+                f"Must provide a return type annotation for "
+                f"component function {self.func.__name__}()."
+            )
+        elif isclass(self.return_type) and not issubclass(
+            self.return_type, ALLOWED_TYPES
+        ):
+            raise TypeError(
+                f"Found unallowed return type '{self.return_type}' for "
+                f"function {self.func.__name__}(). Types allowed by unipipe: "
+                f"[{', '.join(ALLOWED_TYPE_STRINGS)}]"
+            )
+
         for key, value in self.inputs.items():
             if key not in signature(self.func).parameters:
                 # Mimic the behavior when a function is called with an invalid kwarg
@@ -204,6 +220,13 @@ class Component(_Operable, Generic[T_co]):
             target_type: Type = annotations[key]
             if hasattr(target_type, "__origin__"):
                 target_type = target_type.__origin__
+
+            if isclass(target_type) and not issubclass(target_type, ALLOWED_TYPES):
+                raise TypeError(
+                    f"Found unallowed type '{target_type}' for argument '{key}' "
+                    f"to function {self.func.__name__}(). Types allowed by unipipe: "
+                    f"[{', '.join(ALLOWED_TYPE_STRINGS)}]"
+                )
 
             inferred_type = infer_type(value)
             # It's possible for the inferred type to be 'None', specifically when
