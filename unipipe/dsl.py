@@ -188,12 +188,17 @@ class Component(_Operable, Generic[T_co]):
     def type_check_inputs(self):
         annotations = get_annotations(self.func, eval_str=True)
         for key, value in self.inputs.items():
-            if key not in annotations:
+            if key not in signature(self.func).parameters:
                 # Mimic the behavior when a function is called with an invalid kwarg
                 # name -- TypeError with 'unexpected keyword argument' message.
                 raise TypeError(
                     f"Component function {self.func.__name__}() received an "
                     f"unexpected argument '{key}'."
+                )
+            elif key not in annotations:
+                raise TypeError(
+                    f"Must provide a type annotation for argument '{key}' to "
+                    f"component function {self.func.__name__}()."
                 )
 
             target_type: Type = annotations[key]

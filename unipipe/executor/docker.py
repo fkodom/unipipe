@@ -45,8 +45,7 @@ import json
 
 def {argparse_list}(s):
     data = ast.literal_eval(s)
-    print(s, data)
-    return tuple(str(x) for x in data)
+    return [str(x) for x in data]
 
 parser = argparse.ArgumentParser()
 {arguments}
@@ -281,8 +280,15 @@ class DockerExecutor(LocalExecutor):
     def run_component(self, component: Component, **kwargs):
         result = build_and_run(component, kwargs)
         return_type = get_annotations(component.func, eval_str=True).get("return")
-        if isclass(return_type) and issubclass(return_type, tuple):
-            result = return_type(*result)
+
+        if isclass(return_type):
+            if issubclass(return_type, tuple):
+                result = return_type(*result)
+            if not isinstance(result, return_type):
+                raise TypeError(
+                    f"Component function {component.func.__name__}() expected a return "
+                    f"value of type '{return_type}', but found '{type(result)}'."
+                )
 
         return result
 
