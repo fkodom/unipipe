@@ -128,8 +128,5 @@ Link | Description
 
 ## TODO
 
-I won't list everything here :sweat_smile: -- just some of the larger, long-term goals.
-
 1. Add executor for KFP clusters, in addition to Vertex.
-2. Better up-front type checking (i.e. before running the pipeline).
-3. Apache Beam backend and executor (???)
+2. Better up-front type checking (in progress).
