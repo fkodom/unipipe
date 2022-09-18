@@ -10,6 +10,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     Generic,
     List,
     Optional,
@@ -32,11 +33,12 @@ T_co = TypeVar("T_co", covariant=True)
 
 
 class AcceleratorType(str, Enum):
-    T4 = "nvidia-tesla-t4"
-    V100 = "nvidia-tesla-v100"
+    A100 = "nvidia-tesla-a100"
+    K80 = "nvidia-tesla-k80"
     P4 = "nvidia-tesla-p4"
     P100 = "nvidia-tesla-p100"
-    K80 = "nvidia-tesla-k80"
+    T4 = "nvidia-tesla-t4"
+    V100 = "nvidia-tesla-v100"
 
 
 class Accelerator(BaseModel):
@@ -458,7 +460,14 @@ def condition(
     operand2: Any,
     comparator: Callable[[Any, Any], bool],
     name: Optional[str] = None,
-):
+) -> Generator[Pipeline, None, None]:
+    if not (isinstance(operand1, _Operable) or isinstance(operand2, _Operable)):
+        raise ValueError(
+            "At least one condition argument must be an operable pipeline object -- "
+            "not a built-in Python type. This is required for compatibility with KFP. "
+            f"Found 'operand1={operand1}' and 'operand2={operand2}'."
+        )
+
     _condition = Condition(operand1=operand1, operand2=operand2, comparator=comparator)
     pipeline = ConditionalPipeline(name=name, condition=_condition)
     try:
@@ -485,7 +494,7 @@ def not_equal(operand1: Any, operand2: Any, name: Optional[str] = None):
 
 
 @wraps(condition)
-def _depends_on(operand1: Any, name: Optional[str] = None):
+def _depends_on(operand1: _Operable, name: Optional[str] = None):
     _uuid = uuid1()
     if name is None:
         name = f"depends_on_{_uuid}"
@@ -498,7 +507,15 @@ def _depends_on(operand1: Any, name: Optional[str] = None):
 
 
 @contextmanager
-def depends_on(*components: Component):
+def depends_on(*components: _Operable):
+    for i, component in enumerate(components):
+        if not isinstance(component, _Operable):
+            raise ValueError(
+                f"Argument '{component}' (index {i}) to depends_on() is not an "
+                "operable pipeline object. For compatibility with KFP, this function "
+                "only accepts pipeline objects -- not built-in Python types."
+            )
+
     stack = ExitStack()
     component_stack = stack.enter_context(ExitStack())
 
