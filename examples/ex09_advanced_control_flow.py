@@ -62,36 +62,36 @@ def bad_pipeline(name: str):
 
 @dsl.pipeline
 def good_pipeline(name: str):
-    motto = "Winter is coming..."
-    first, last = split_name(name=name)
+    # motto = "Winter is coming..."
+    # first, last = split_name(name=name)
 
-    # This is valid for all input names.  Avoid over-writing the 'motto' variable.
-    #
-    # If control flow logic gets too complicated, consider breaking this pipeline
-    # into multiple (nested) sub-pipelines, each with their own control flow logic.
-    with dsl.equal(last, "Lannister"):
-        lannister_motto = lannister_house_motto()
-        echo(phrase=lannister_motto)
-    with dsl.not_equal(last, "Lannister"):
-        stark_motto = echo(phrase=motto)
+    # # This is valid for all input names.  Avoid over-writing the 'motto' variable.
+    # #
+    # # If control flow logic gets too complicated, consider breaking this pipeline
+    # # into multiple (nested) sub-pipelines, each with their own control flow logic.
+    # with dsl.equal(last, "Lannister"):
+    #     lannister_motto = lannister_house_motto()
+    #     echo(phrase=lannister_motto)
+    # with dsl.not_equal(last, "Lannister"):
+    #     stark_motto = echo(phrase=motto)
 
-        # When components have side effects, such as modifying remote data, you can
-        # mark other pipeline components as dependent. This ensures that the 'hello'
-        # component below never executes before 'stark_motto' is returned.  Otherwise,
-        # KubeFlow would try to run them in parallel, since 'hello' is not explicitly
-        # dependent on 'stark_motto'.
-        #
-        # 'dsl.depends_on' is treated as a conditional clause, since the execution of
-        # everything in this 'with' clause is dependent on 'stark_motto'. As a result,
-        # none of the variables created in this context would be accessible outside
-        # of the 'with' clause.
-        with dsl.depends_on(stark_motto):
-            hello(first_name=first, last_name=last)
+    #     # When components have side effects, such as modifying remote data, you can
+    #     # mark other pipeline components as dependent. This ensures that the 'hello'
+    #     # component below never executes before 'stark_motto' is returned.  Otherwise,
+    #     # KubeFlow would try to run them in parallel, since 'hello' is not explicitly
+    #     # dependent on 'stark_motto'.
+    #     #
+    #     # 'dsl.depends_on' is treated as a conditional clause, since the execution of
+    #     # everything in this 'with' clause is dependent on 'stark_motto'. As a result,
+    #     # none of the variables created in this context would be accessible outside
+    #     # of the 'with' clause.
+    #     with dsl.depends_on(stark_motto):
+    #         hello(first_name=first, last_name=last)
 
-    # You can also include multiple components in the 'depends_on' arguments:
+    # # You can also include multiple components in the 'depends_on' arguments:
     mottos = [lannister_house_motto() for _ in range(3)]
     with dsl.depends_on(*mottos):
-        echo(phrase="That's too many Lannisters...")
+        echo(phrase="That is too many Lannisters...")
 
 
 if __name__ == "__main__":
