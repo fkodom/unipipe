@@ -4,12 +4,13 @@ import logging
 from contextlib import ExitStack, contextmanager
 from enum import Enum
 from functools import partial, wraps
-from inspect import signature
+from inspect import isclass, signature
 from types import TracebackType
 from typing import (
     Any,
     Callable,
     Dict,
+    Generator,
     Generic,
     List,
     Optional,
@@ -23,18 +24,21 @@ from uuid import uuid1
 from pydantic import BaseModel, parse_obj_as
 
 from unipipe.utils import ops
-from unipipe.utils.annotations import wrap_cast_output_type
+from unipipe.utils.annotations import infer_type, wrap_cast_output_type
 from unipipe.utils.compat import get_annotations
 
+ALLOWED_TYPES = (str, int, float, bool, list, tuple, None)
+ALLOWED_TYPE_STRINGS = [getattr(t, "__name__", str(t)) for t in ALLOWED_TYPES]
 T_co = TypeVar("T_co", covariant=True)
 
 
 class AcceleratorType(str, Enum):
-    T4 = "nvidia-tesla-t4"
-    V100 = "nvidia-tesla-v100"
+    A100 = "nvidia-tesla-a100"
+    K80 = "nvidia-tesla-k80"
     P4 = "nvidia-tesla-p4"
     P100 = "nvidia-tesla-p100"
-    K80 = "nvidia-tesla-k80"
+    T4 = "nvidia-tesla-t4"
+    V100 = "nvidia-tesla-v100"
 
 
 class Accelerator(BaseModel):
@@ -163,29 +167,82 @@ class Component(_Operable, Generic[T_co]):
             uuid = str(uuid1())[:8]
             name = f"{func.__name__}-{uuid}"
         inputs = inputs or {}
+        logging_level = logging_level or logging.INFO
 
         self.name = name.replace("_", "-")
-        logging_level = logging_level or logging.INFO
-        self.return_type = get_annotations(func, eval_str=True)["return"]
+        self.inputs = inputs
+        self.return_type = get_annotations(func, eval_str=True).get("return")
         self.func = wrap_logging_info(
             wrap_cast_output_type(func, _type=self.return_type),
             component_name=name,
             logging_level=logging_level,
         )
-        self.inputs = inputs
+
         self.logging_level = logging_level
         self.packages_to_install = packages_to_install
         self.pip_index_urls = get_pip_index_urls(pip_index_urls)
         self.hardware = parse_obj_as(Hardware, hardware) if hardware else Hardware()
         self.base_image = base_image or _base_image_for_hardware(self.hardware)
 
+        self.type_check()
         pipeline = PipelineContext().current
         if pipeline is not None:
             pipeline.components.append(self)
 
+    def type_check(self):
+        annotations = get_annotations(self.func, eval_str=True)
+        if "return" not in annotations:
+            raise TypeError(
+                f"Must provide a return type annotation for "
+                f"component function {self.func.__name__}()."
+            )
+        elif isclass(self.return_type) and not issubclass(
+            self.return_type, ALLOWED_TYPES
+        ):
+            raise TypeError(
+                f"Found unallowed return type '{self.return_type}' for "
+                f"function {self.func.__name__}(). Types allowed by unipipe: "
+                f"[{', '.join(ALLOWED_TYPE_STRINGS)}]"
+            )
+
+        for key, value in self.inputs.items():
+            if key not in signature(self.func).parameters:
+                # Mimic the behavior when a function is called with an invalid kwarg
+                # name -- TypeError with 'unexpected keyword argument' message.
+                raise TypeError(
+                    f"Component function {self.func.__name__}() received an "
+                    f"unexpected argument '{key}'."
+                )
+            elif key not in annotations:
+                raise TypeError(
+                    f"Must provide a type annotation for argument '{key}' to "
+                    f"component function {self.func.__name__}()."
+                )
+
+            target_type: Type = annotations[key]
+            if hasattr(target_type, "__origin__"):
+                target_type = target_type.__origin__
+
+            if isclass(target_type) and not issubclass(target_type, ALLOWED_TYPES):
+                raise TypeError(
+                    f"Found unallowed type '{target_type}' for argument '{key}' "
+                    f"to function {self.func.__name__}(). Types allowed by unipipe: "
+                    f"[{', '.join(ALLOWED_TYPE_STRINGS)}]"
+                )
+
+            inferred_type = infer_type(value)
+            # It's possible for the inferred type to be 'None', specifically when
+            # using nested pipelines.  Component functions are required to have a
+            # return type annotation, but pipeline functions are not always.
+            if isclass(inferred_type) and not issubclass(inferred_type, target_type):
+                raise TypeError(
+                    f"Component function {self.func.__name__}() expected argument "
+                    f"'{key}' with type '{target_type}', but found '{inferred_type}'."
+                )
+
     def _len(self) -> int:
-        if issubclass(self.return_type, tuple):
-            return len(self.return_type._fields)
+        if isclass(self.return_type) and issubclass(self.return_type, tuple):
+            return len(self.return_type._fields)  # type: ignore
 
         raise TypeError(
             "Only components with 'NamedTuple' return type have a defined length. "
@@ -276,6 +333,7 @@ class Pipeline(ExitStack, _Operable, Generic[T_co]):
         components: Optional[List[Union[Component, Pipeline]]] = None,
         inputs: Optional[Dict] = None,
         return_value: Optional[Any] = None,
+        return_type: Optional[Type] = None,
     ) -> None:
         """
         Args:
@@ -291,6 +349,7 @@ class Pipeline(ExitStack, _Operable, Generic[T_co]):
         self.components = components or []
         self.inputs = inputs or {}
         self.return_value = return_value
+        self.return_type = return_type or type(self.return_value)
         self.parent: Optional[Pipeline] = None
 
         context = PipelineContext()
@@ -312,10 +371,6 @@ class Pipeline(ExitStack, _Operable, Generic[T_co]):
         context = PipelineContext()
         context.current = self.parent
         return super().__exit__(type, exc, traceback)
-
-    @property
-    def return_type(self) -> Type:
-        return type(self.return_value)
 
     def _len(self) -> int:
         if issubclass(self.return_type, (tuple, list, dict)):
@@ -357,10 +412,11 @@ def pipeline(
 
         def wrapper(func: Callable) -> Callable:
             def wrapped_pipeline(**inputs) -> Pipeline:
-                with Pipeline(name=name, **kwargs) as pipe:
+                with Pipeline(name=name, **kwargs) as p:
                     return_value = func(**inputs)
-                    pipe.return_value = return_value
-                return pipe
+                    p.return_value = return_value
+                    p.return_type = get_annotations(func, eval_str=True).get("return")
+                return p
 
             return wrapped_pipeline
 
@@ -369,10 +425,12 @@ def pipeline(
 
         def wrapped_pipeline(**inputs) -> Pipeline:
             assert func is not None
-            with Pipeline(name=name, **kwargs) as pipe:
+            with Pipeline(name=name, **kwargs) as p:
                 return_value = func(**inputs)
-                pipe.return_value = return_value
-            return pipe
+                p.return_value = return_value
+                return_type = get_annotations(func, eval_str=True).get("return")
+                p.return_type = return_type or type(return_value)
+            return p
 
         return wrapped_pipeline
 
@@ -402,7 +460,14 @@ def condition(
     operand2: Any,
     comparator: Callable[[Any, Any], bool],
     name: Optional[str] = None,
-):
+) -> Generator[Pipeline, None, None]:
+    if not (isinstance(operand1, _Operable) or isinstance(operand2, _Operable)):
+        raise ValueError(
+            "At least one condition argument must be an operable pipeline object -- "
+            "not a built-in Python type. This is required for compatibility with KFP. "
+            f"Found 'operand1={operand1}' and 'operand2={operand2}'."
+        )
+
     _condition = Condition(operand1=operand1, operand2=operand2, comparator=comparator)
     pipeline = ConditionalPipeline(name=name, condition=_condition)
     try:
@@ -429,7 +494,7 @@ def not_equal(operand1: Any, operand2: Any, name: Optional[str] = None):
 
 
 @wraps(condition)
-def _depends_on(operand1: Any, name: Optional[str] = None):
+def _depends_on(operand1: _Operable, name: Optional[str] = None):
     _uuid = uuid1()
     if name is None:
         name = f"depends_on_{_uuid}"
@@ -442,7 +507,15 @@ def _depends_on(operand1: Any, name: Optional[str] = None):
 
 
 @contextmanager
-def depends_on(*components: Component):
+def depends_on(*components: _Operable):
+    for i, component in enumerate(components):
+        if not isinstance(component, _Operable):
+            raise ValueError(
+                f"Argument '{component}' (index {i}) to depends_on() is not an "
+                "operable pipeline object. For compatibility with KFP, this function "
+                "only accepts pipeline objects -- not built-in Python types."
+            )
+
     stack = ExitStack()
     component_stack = stack.enter_context(ExitStack())
 

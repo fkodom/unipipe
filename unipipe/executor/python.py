@@ -27,8 +27,15 @@ class PythonExecutor(LocalExecutor):
     def run_component(self, component: Component, **kwargs):
         result = component.func(**kwargs)
         return_type = get_annotations(component.func, eval_str=True).get("return")
-        if isclass(return_type) and issubclass(return_type, tuple):
-            result = return_type(*result)
+
+        if isclass(return_type):
+            if issubclass(return_type, tuple):
+                result = return_type(*result)
+            if not isinstance(result, return_type):
+                raise TypeError(
+                    f"Component function {component.func.__name__}() expected a return "
+                    f"value of type '{return_type}', but found '{type(result)}'."
+                )
 
         return result
 

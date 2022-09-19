@@ -43,7 +43,7 @@ def pipeline():
 
 
 @dsl.pipeline
-def other_pipeline(name: Union[str, dsl.Component[str]]) -> dsl.Component[str]:
+def other_pipeline(name: Union[str, dsl.Component[str]]) -> str:
     # Use the type annotation 'dsl.Component[<type>]' where appropriate to keep
     # 'mypy' from complaining at us.
     #

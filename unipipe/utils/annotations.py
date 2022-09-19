@@ -21,15 +21,17 @@ def resolve_annotations(obj: Callable) -> Callable:
 
 
 def infer_type(obj: Any) -> Type:
-    from unipipe.dsl import Component, LazyAttribute, Pipeline
+    from unipipe.dsl import Component, LazyAttribute, LazyItem, Pipeline
 
     if isinstance(obj, Component):
         return get_annotations(obj.func, eval_str=True)["return"]
+    elif isinstance(obj, Pipeline):
+        return obj.return_type or infer_type(obj.return_value)
     elif isinstance(obj, LazyAttribute):
         parent_type = infer_type(obj.parent)
         return get_annotations(parent_type, eval_str=True).get(obj.key)
-    elif isinstance(obj, Pipeline):
-        return infer_type(obj.return_value)
+    elif isinstance(obj, LazyItem):
+        return infer_type(obj.parent[obj.idx])
     else:
         return type(obj)
 
