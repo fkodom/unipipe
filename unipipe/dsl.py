@@ -521,10 +521,10 @@ def depends_on(*components: _Operable):
 
     def depends(*args):
         nonlocal component_stack
-        condition = _depends_on(args[0])
-        component_stack = component_stack.enter_context(condition)
 
-        if len(args) > 1:
+        if len(args) >= 1:
+            condition = _depends_on(args[0])
+            component_stack = component_stack.enter_context(condition)
             return depends(*args[1:])
 
     depends(*components)
