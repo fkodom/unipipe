@@ -152,7 +152,4 @@ def run_script(
     def pipeline():
         component_fn(args)
 
-    if executor == "vertex":
-        unipipe.run(executor=executor, pipeline=pipeline(), pipeline_root=pipeline_root)
-    else:
-        unipipe.run(executor=executor, pipeline=pipeline())
+    unipipe.run(executor=executor, pipeline=pipeline(), pipeline_root=pipeline_root)

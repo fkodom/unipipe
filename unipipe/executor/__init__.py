@@ -1,5 +1,5 @@
 from importlib import import_module
-from typing import Dict, Union
+from typing import Dict, Optional, Union
 
 from pydantic import BaseModel
 
@@ -22,11 +22,12 @@ EXECUTOR_IMPORTS: Dict[str, ExecutorImport] = {
 def run(
     executor: Union[str, Executor],
     pipeline: Pipeline,
-    *args,
+    pipeline_root: Optional[str] = None,
     **kwargs,
 ):
     if isinstance(executor, str):
         _import = EXECUTOR_IMPORTS[executor]
         executor = getattr(import_module(_import.module), _import.name)()
         assert isinstance(executor, Executor)
-    return executor.run(pipeline, *args, **kwargs)
+
+    return executor.run(pipeline, pipeline_root=pipeline_root, **kwargs)
