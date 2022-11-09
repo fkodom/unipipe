@@ -27,7 +27,7 @@ from unipipe.utils import ops
 from unipipe.utils.annotations import infer_type, wrap_cast_output_type
 from unipipe.utils.compat import get_annotations
 
-ALLOWED_TYPES = (str, int, float, bool, list, tuple, None)
+ALLOWED_TYPES = (str, int, float, bool, list, tuple, type(None))
 ALLOWED_TYPE_STRINGS = [getattr(t, "__name__", str(t)) for t in ALLOWED_TYPES]
 T_co = TypeVar("T_co", covariant=True)
 
@@ -189,7 +189,7 @@ class Component(_Operable, Generic[T_co]):
         if pipeline is not None:
             pipeline.components.append(self)
 
-    def type_check(self):
+    def type_check(self) -> None:
         annotations = get_annotations(self.func, eval_str=True)
         if "return" not in annotations:
             raise TypeError(

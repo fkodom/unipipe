@@ -19,7 +19,7 @@ class VertexExecutor(Executor):
         arguments: Optional[Dict] = None,
         enable_caching: bool = False,
         credentials: Optional[Credentials] = None,
-        project: str = None,
+        project: Optional[str] = None,
         location: str = "us-central1",
     ):
         if pipeline_root is None:

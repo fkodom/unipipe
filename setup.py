@@ -19,7 +19,7 @@ def get_version_tag() -> str:
 
 
 extras_require = {
-    "docker": ["docker~=5.0.0"],
+    "docker": ["docker>=5.0"],
     "vertex": ["kfp>=1.8", "google-cloud-aiplatform>=1.10"],
     "test": [
         "arrow>=1.2",
