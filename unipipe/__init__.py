@@ -1,1 +1,1 @@
-from unipipe.executor import run
+from unipipe.executor import run  # noqa: F401
