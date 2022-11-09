@@ -49,7 +49,7 @@ def validate_hardware(ctx, param, value) -> Optional[dsl.Hardware]:
     type=str,
     help=(
         "Root directory for storing pipeline artifacts. Currently only used for "
-        "'--executor=vertex'. Default: None",
+        "'--executor=vertex'. Default: None"
     ),
 )
 @click.option(
