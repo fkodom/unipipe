@@ -139,6 +139,7 @@ def run_script(
     args: Sequence[str] = (),
     executor: str = "python",
     name: Optional[str] = None,
+    pipeline_root: Optional[str] = None,
     **kwargs,
 ):
     component_fn = component_from_script(path=path, **kwargs)
@@ -151,4 +152,7 @@ def run_script(
     def pipeline():
         component_fn(args)
 
-    unipipe.run(executor=executor, pipeline=pipeline())
+    if executor == "vertex":
+        unipipe.run(executor=executor, pipeline=pipeline(), pipeline_root=pipeline_root)
+    else:
+        unipipe.run(executor=executor, pipeline=pipeline())

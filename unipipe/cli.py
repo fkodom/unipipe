@@ -42,6 +42,17 @@ def validate_hardware(ctx, param, value) -> Optional[dsl.Hardware]:
     help="Name of the resulting pipeline. Default: None",
 )
 @click.option(
+    "-r",
+    "--pipeline-root",
+    "pipeline_root",
+    default=None,
+    type=str,
+    help=(
+        "Root directory for storing pipeline artifacts. Currently only used for "
+        "'--executor=vertex'. Default: None",
+    ),
+)
+@click.option(
     "-b",
     "--base-image",
     "base_image",
@@ -84,6 +95,7 @@ def run_script(
     args: Sequence[str],
     executor: str,
     name: Optional[str] = None,
+    pipeline_root: Optional[str] = None,
     # Component args
     base_image: Optional[str] = None,
     packages_to_install: Optional[Sequence[str]] = None,
@@ -100,6 +112,7 @@ def run_script(
         args=args,
         executor=executor,
         name=name,
+        pipeline_root=pipeline_root,
         # Component args
         base_image=base_image,
         packages_to_install=packages_to_install,
