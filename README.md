@@ -91,7 +91,10 @@ Or scale **any** Python script to the cloud using the `unipipe` CLI:
 
 ```bash
 # Same choices of executors as above.
-unipipe run-script --executor vertex ./examples/ex01_hello_world.py
+unipipe run-script \
+    --executor vertex \
+    --pipeline-root "gs://bucket-name/artifact-root/ \
+    ./examples/ex01_hello_world.py
 ```
 
 This makes experimentation easy.  `unipipe` will automatically compose your script into a pipeline, and launch it with your chosen executor. [See this example for more details.](./examples/ex11_using_scripts.py)
