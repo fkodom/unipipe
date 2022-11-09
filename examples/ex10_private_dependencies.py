@@ -19,7 +19,6 @@ Just don't expose sensitive information directly in the source code.
 import argparse
 import os
 
-import unipipe
 from unipipe import dsl
 
 # Example of building private PyPI URL from environment variables.

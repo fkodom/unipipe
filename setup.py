@@ -19,21 +19,21 @@ def get_version_tag() -> str:
 
 
 extras_require = {
-    "docker": ["docker"],
-    "vertex": ["kfp", "google-cloud-aiplatform", "google-cloud-storage"],
+    "docker": ["docker>=5.0"],
+    "vertex": ["kfp>=1.8", "google-cloud-aiplatform>=1.10"],
     "test": [
-        "arrow",
-        "black",
-        "flake8",
-        "isort",
-        "mypy",
-        "pytest",
-        "pytest-cov",
-        "torch",
-        "torchvision",
+        "arrow>=1.2",
+        "black>=22.6",
+        "flake8>=5.0",
+        "isort>=5.10",
+        "mypy>=0.971",
+        "pytest>=7.1",
+        "pytest-cov>=3.0",
+        "torch>=1.8",
+        "torchvision>=0.9",
     ],
 }
-extras_require["dev"] = ["pre-commit", "ipywidgets", *extras_require["test"]]
+extras_require["dev"] = ["pre-commit>=2.20", *extras_require["test"]]
 all_require = [r for reqs in extras_require.values() for r in reqs]
 extras_require["all"] = all_require
 

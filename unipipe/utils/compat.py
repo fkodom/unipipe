@@ -8,6 +8,7 @@ from __future__ import annotations
 import functools
 import sys
 import types
+from typing import Callable, Optional, Type, Union
 
 
 def removeprefix(string: str, prefix: str) -> str:
@@ -70,6 +71,7 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):  # noqa:
         although if obj is a wrapped function (using
         functools.update_wrapper()) it is first unwrapped.
     """
+    unwrap: Optional[Union[Type, Callable]] = None
     if isinstance(obj, type):
         # class
         obj_dict = getattr(obj, "__dict__", None)
@@ -119,6 +121,7 @@ def get_annotations(obj, *, globals=None, locals=None, eval_str=False):  # noqa:
 
     if unwrap is not None:
         while True:
+            assert unwrap is not None
             if hasattr(unwrap, "__wrapped__"):
                 unwrap = unwrap.__wrapped__
                 continue

@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import os
 from typing import Any, Dict
 
 import kfp.dsl as kfp_dsl
 import kfp.v2.dsl as kfp_v2_dsl
+from kfp.v2.compiler import Compiler
 from kfp.v2.components.component_factory import create_component_from_func
 
 from unipipe.dsl import Component, ConditionalPipeline, LazyAttribute, Pipeline
@@ -115,3 +117,10 @@ class KubeflowPipelinesBackend:
             build_pipeline_with_locals(pipeline, _locals=pipeline.inputs)
 
         return kfp_pipeline
+
+    def compile(self, pipeline: Pipeline, path: str):
+        if isinstance(pipeline, Pipeline):
+            pipeline = KubeflowPipelinesBackend().build(pipeline)
+
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        Compiler().compile(pipeline_func=pipeline, package_path=path)

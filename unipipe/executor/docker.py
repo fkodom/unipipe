@@ -8,10 +8,10 @@ from inspect import getsource, isclass
 from itertools import dropwhile
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Type, Union
 
+from docker.client import DockerClient
 from docker.errors import BuildError
 from docker.types import DeviceRequest
 
-import docker
 from unipipe.dsl import Component, ConditionalPipeline, LazyAttribute, Pipeline
 from unipipe.executor.base import LocalExecutor
 from unipipe.utils.compat import get_annotations
@@ -134,7 +134,7 @@ def _record_build_logs(logs: Iterable[Dict[str, str]], level: int):
 def build_docker_image(component: Component, tag: str):
     base_image = component.base_image
     logging.info(f"Building Docker image: ('tag={tag}', 'base_image={base_image}')")
-    client = docker.from_env()
+    client = DockerClient.from_env()
 
     # If no packages listed, just include 'pip' as a placeholder
     install_options = component.packages_to_install or ["pip"]
@@ -185,7 +185,7 @@ def build_and_run(
     volumes: Optional[Dict[str, Union[Dict, Volume]]] = None,
     remove: bool = True,
 ):
-    client = docker.from_env()
+    client = DockerClient.from_env()
     tag = build_docker_image(component, tag=component.name)
     if arguments is None:
         arguments = {}
