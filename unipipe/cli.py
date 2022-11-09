@@ -107,6 +107,12 @@ def run_script(
     if packages_to_install == DEFAULT_SEQUENCE:
         packages_to_install = None
 
+    if (executor == "vertex") and (pipeline_root is None):
+        raise ValueError(
+            "Must provide '--pipeline-root' argument for '--executor=vertex'. "
+            f"Expected non-empty string, but found: '{pipeline_root}'"
+        )
+
     unipipe_run_script(
         path=path,
         args=args,
