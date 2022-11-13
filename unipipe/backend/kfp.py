@@ -26,14 +26,14 @@ def build_kubeflow_component(component: Component):
 def set_hardware_attributes(container_op: Any, component: Component):
     hardware = component.hardware
     if hardware.cpus:
-        container_op.set_cpu_limit(hardware.cpus)
+        container_op.container.set_cpu_limit(hardware.cpus)
     if hardware.memory:
-        container_op.set_memory_limit(hardware.memory)
+        container_op.container.set_memory_limit(hardware.memory)
     if hardware.accelerator:
         accelerator = hardware.accelerator
         if accelerator.count:
             # KFP requires the count to be given as a string
-            container_op.set_gpu_limit(str(accelerator.count))
+            container_op.container.set_gpu_limit(str(accelerator.count))
         if accelerator.type:
             container_op.add_node_selector_constraint(
                 "cloud.google.com/gke-accelerator",
